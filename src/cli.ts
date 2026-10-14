@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { type CheckReport, runCheck, stampDocs } from "./check.js";
+import { type Candidates, findCandidates } from "./candidates.js";
 import { runClaudeHook } from "./hook.js";
 import { installClaudeHook, installGitHook } from "./install.js";
 import { buildPlan } from "./plan.js";
@@ -15,6 +16,7 @@ Usage:
   ctxmap init [path] --dry-run     Same as plan
   ctxmap check [path]              Validate refs in context docs and report stale ones (no LLM, no network)
   ctxmap stamp [path] [doc...]     Mark docs as verified now: record source hashes in the manifest
+  ctxmap candidates [path]         Rank flow candidates and gotcha evidence from code + git history (no LLM)
   ctxmap hooks install [path]      Install the git pre-commit check and the Claude Code edit hook
   ctxmap hook claude               (internal) Claude Code PreToolUse hook; reads hook JSON on stdin
 
@@ -23,6 +25,7 @@ Options:
   --strict           check: also fail on changed or unstamped docs (default: only broken refs fail)
   --external         check: also report broken file refs in existing docs (README, docs/, CLAUDE.md...)
   --force            stamp: stamp docs even if they have broken refs
+  --limit <n>        candidates: how many flows to list (default 10)
   --git / --claude   hooks install: only that hook (default: both)
   --pointers         plan: also create CLAUDE.md / GEMINI.md pointers when they don't exist
   --flows <n>        plan: number of flows to propose (default 6)
@@ -44,6 +47,7 @@ function main(argv: string[]): number {
       claude: { type: "boolean" },
       pointers: { type: "boolean" },
       flows: { type: "string" },
+      limit: { type: "string" },
       "context-dir": { type: "string" },
       help: { type: "boolean", short: "h" },
     },
@@ -91,6 +95,13 @@ function main(argv: string[]): number {
       return result.refused.length > 0 ? 1 : 0;
     }
 
+    case "candidates": {
+      const limit = values.limit ? Number.parseInt(values.limit, 10) : undefined;
+      const result = findCandidates(resolve(rest[0] ?? "."), { limit });
+      process.stdout.write(values.json ? `${JSON.stringify(result, null, 2)}\n` : renderCandidates(result));
+      return 0;
+    }
+
     case "hooks": {
       if (rest[0] !== "install") break;
       const root = resolve(rest[1] ?? ".");
@@ -114,6 +125,30 @@ function main(argv: string[]): number {
 
   process.stderr.write(`Unknown command: ${positionals.join(" ")}\n\n${HELP}`);
   return 1;
+}
+
+function renderCandidates(c: Candidates): string {
+  const s = c.stats;
+  const out = [
+    `Analysed ${s.sourceFiles} source files in ${s.modules} modules, ${s.entryFiles} entry files, ${s.commits} commits${s.shallow ? " (shallow clone: history truncated)" : ""}.`,
+    "",
+    "Flow candidates (entry points ranked by modules reached × recent churn × triggers):",
+  ];
+  c.flows.forEach((f, i) => {
+    const more = f.triggerCount > f.triggers.length ? ` +${f.triggerCount - f.triggers.length}` : "";
+    out.push(`${String(i + 1).padStart(3)}. ${f.file}  [${f.kind}] ${f.triggers.slice(0, 3).join(", ")}${more}`);
+    out.push(`     reaches ${f.modules.length} modules${f.modules.length ? ` (${f.modules.slice(0, 5).join(", ")}${f.modules.length > 5 ? ", …" : ""})` : ""}; ${f.churn} recent commits`);
+  });
+  if (c.flows.length === 0) out.push("  (no entry points detected)");
+  out.push("", "Gotcha evidence — files that keep needing fixes:");
+  for (const h of c.fixHotspots.slice(0, 10)) out.push(`  ${String(h.fixes).padStart(3)} fixes  ${h.file}  e.g. ${h.examples[0]?.hash} "${h.examples[0]?.subject}"`);
+  if (c.fixHotspots.length === 0) out.push("  (none: no repeated fix commits in the history read)");
+  out.push("", "Gotcha evidence — warning comments in frequently changed code:");
+  for (const m of c.comments.slice(0, 12)) out.push(`  ${m.file}:${m.line}  ${m.text}`);
+  if (c.comments.length === 0) out.push("  (none)");
+  if (c.decisionRecords.length > 0) out.push("", `Decision records (rationale source): ${c.decisionRecords.length} files, e.g. ${c.decisionRecords.slice(0, 3).join(", ")}`);
+  out.push("", "These are candidates for init to choose from; nothing was written.");
+  return `${out.join("\n")}\n`;
 }
 
 function renderCheck(report: CheckReport): string {

@@ -26,8 +26,8 @@ export function extractRefs(markdown: string): Ref[] {
   const seen = new Set<string>();
   for (const match of markdown.matchAll(CODE_SPAN)) {
     const raw = (match[1] ?? "").trim();
-    // Placeholders and runtime paths (`$HOME/x`, `~/x`) are not repo refs.
-    if (seen.has(raw) || /[<>*\s]|NNN|^[$~]/.test(raw)) continue;
+    // Placeholders and runtime paths (`$HOME/x`, `~/x`, `/api/route`) are not repo refs.
+    if (seen.has(raw) || /[<>*\s]|NNN|^[$~/]/.test(raw)) continue;
     const ref = parseRef(raw);
     if (ref) {
       seen.add(raw);

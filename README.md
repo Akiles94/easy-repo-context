@@ -6,7 +6,7 @@ Design and roadmap: [docs/BRIEF.md](docs/BRIEF.md).
 
 ## Status
 
-Milestones 1–2: inventory/plan, and doc freshness (no LLM yet). See the roadmap in [docs/BRIEF.md](docs/BRIEF.md).
+Milestones 1–3: inventory/plan, doc freshness, and flow/gotcha candidates (no LLM yet). See the roadmap in [docs/BRIEF.md](docs/BRIEF.md).
 
 ```
 ctxmap plan [path]              # what init would write; existing docs, real commands, token estimate
@@ -14,7 +14,10 @@ ctxmap check [path]             # validate refs in .context/ docs + AGENTS.md bl
 ctxmap check [path] --external  # also list broken file refs in existing docs (README, docs/, ...)
 ctxmap stamp [path] [doc...]    # mark docs verified: record source hashes in .context/manifest.yaml
 ctxmap hooks install [path]     # git pre-commit check + Claude Code edit hook
+ctxmap candidates [path]        # rank flow candidates; gotcha evidence from fix commits and warning comments
 ```
+
+`candidates` finds entry points (HTTP routes, RPC/MCP tools, CLI commands, queues, cron, IPC; TS/JS, Python, Go), follows imports (relative, tsconfig `paths`, workspace packages) to see which modules each one reaches, and ranks them by modules reached × recent git churn × number of triggers. On outline (~1.9k TS files, 1k commits) it runs in ~0.3 s and ranks `server/routes/api/documents/documents.ts` first.
 
 Refs are code spans in docs: `src/a.ts`, `src/a.ts:Class.method()`, `src/a.ts:42`, `package.json#scripts.test`. A doc is **broken** when a ref no longer resolves (fails `check`), **changed** when a referenced file changed since it was stamped (warning; fails with `--strict`), **unstamped** when it isn't in the manifest yet.
 

@@ -39,8 +39,8 @@ const RULES: Rule[] = [
   { test: (p) => p.startsWith(".codex/"), kind: "agent-config", tool: "Codex" },
   { test: (p) => p.startsWith(".gemini/"), kind: "agent-config", tool: "Gemini CLI" },
   { test: (p) => base(p) === "SKILL.md", kind: "agent-config", tool: "skill" },
-  { test: (p) => /^readme(\.[a-z]+)?$/i.test(base(p)), kind: "human-docs" },
-  { test: (p) => /^(contributing|architecture|design|security|development|hacking)(\.[a-z]+)?$/i.test(base(p)), kind: "human-docs" },
+  { test: (p) => /^readme(\.(md|mdx|rst|txt|adoc))?$/i.test(base(p)), kind: "human-docs" },
+  { test: (p) => /^(contributing|architecture|design|security|development|hacking)(\.(md|mdx|rst|txt|adoc))?$/i.test(base(p)), kind: "human-docs" },
   { test: (p) => md(p) && (under("adr")(p) || under("adrs")(p) || under("decisions")(p)), kind: "human-docs" },
   { test: (p) => md(p) && (p.startsWith("docs/") || p.startsWith("doc/")), kind: "human-docs" },
 ];

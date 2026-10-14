@@ -28,6 +28,19 @@ export function renderPlan(plan: Plan): string {
     if (items.length === 0) continue;
     const total = items.reduce((n, d) => n + d.tokens, 0);
     out.push(`  ${label}: ${items.length} file(s), ~${k(total)} tokens`);
+    if (kind === "agent-config" && items.length > 8) {
+      // Skills and agents come as folders of files; one line per folder is enough to see what exists.
+      const groups = new Map<string, { n: number; tokens: number; tool?: string }>();
+      for (const d of items) {
+        const key = d.path.split("/").slice(0, 3).join("/");
+        const g = groups.get(key) ?? { n: 0, tokens: 0, tool: d.tool };
+        g.n++;
+        g.tokens += d.tokens;
+        groups.set(key, g);
+      }
+      for (const [dir, g] of groups) out.push(`    ${dir}${g.n > 1 ? `/ (${g.n} files)` : ""}${g.tool ? ` [${g.tool}]` : ""} ~${k(g.tokens)}`);
+      continue;
+    }
     const shown = kind === "human-docs" ? items.slice(0, 12) : items;
     for (const d of shown) out.push(`    ${d.path}${d.tool && kind !== "human-docs" ? ` [${d.tool}]` : ""} ~${k(d.tokens)}${d.managed ? " (has ctxmap block)" : ""}`);
     if (shown.length < items.length) out.push(`    … ${items.length - shown.length} more`);
