@@ -1,0 +1,30 @@
+{
+  "name": "ctxmap",
+  "version": "0.0.1",
+  "description": "Lean, always-current, AI-readable context for any repository.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "ctxmap": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "prompts",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}
