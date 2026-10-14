@@ -1,0 +1,180 @@
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { listFiles, readText } from "./files.js";
+import { inventory } from "./inventory.js";
+import { hashFile, headCommit, loadManifest, type Manifest, saveManifest } from "./manifest.js";
+import { readManagedBlock } from "./markers.js";
+import { buildSuffixIndex, extractRefs, hasJsonKey, hasSymbol, type ResolvedRef, resolvePath } from "./refs.js";
+
+export type DocStatus = "fresh" | "changed" | "unstamped" | "broken";
+
+export interface DocReport {
+  doc: string;
+  status: DocStatus;
+  broken: ResolvedRef[];
+  /** Sources whose content changed since the doc was stamped. */
+  changed: string[];
+  sources: string[];
+}
+
+export interface CheckReport {
+  docs: DocReport[];
+  /** Broken path refs in docs ctxmap doesn't own (README, docs/, CLAUDE.md...). Informational. */
+  external: DocReport[];
+}
+
+export interface CheckOptions {
+  contextDir?: string;
+  /** Also scan existing human/agent docs for broken file refs. */
+  external?: boolean;
+}
+
+interface RepoIndex {
+  root: string;
+  contextDir: string;
+  files: Set<string>;
+  suffix: Map<string, string[]>;
+}
+
+export function indexRepo(root: string, contextDir: string): RepoIndex {
+  const files = new Set(listFiles(root));
+  return { root, contextDir, files, suffix: buildSuffixIndex(files) };
+}
+
+/** Docs owned by ctxmap: everything under the context dir plus managed blocks in AGENTS.md files. */
+export function ownedDocs(root: string, contextDir: string, files: Iterable<string>): string[] {
+  const docs = new Set<string>();
+  const dir = join(root, contextDir);
+  if (existsSync(dir)) {
+    for (const entry of readdirSync(dir, { recursive: true, withFileTypes: true })) {
+      if (entry.isFile() && entry.name.endsWith(".md")) {
+        docs.add(join(entry.parentPath, entry.name).slice(root.length + 1).split("\\").join("/"));
+      }
+    }
+  }
+  for (const f of files) {
+    if ((f === "AGENTS.md" || f.endsWith("/AGENTS.md")) && readManagedBlock(safeRead(root, f)) !== undefined) docs.add(f);
+  }
+  return [...docs].sort();
+}
+
+function safeRead(root: string, path: string): string {
+  try {
+    return readText(root, path);
+  } catch {
+    return "";
+  }
+}
+
+/** For AGENTS.md only the managed block is ours; the rest is the user's. */
+function docBody(root: string, doc: string): string {
+  const text = safeRead(root, doc);
+  return doc.endsWith("AGENTS.md") ? (readManagedBlock(text) ?? "") : text;
+}
+
+export function resolveDocRefs(repo: RepoIndex, doc: string, body: string): ResolvedRef[] {
+  const resolved: ResolvedRef[] = [];
+  for (const ref of extractRefs(body)) {
+    const candidates = resolvePath(ref.path, doc, repo.files, repo.suffix);
+    if (candidates === "not-a-ref") continue;
+    if (candidates.length === 0) {
+      resolved.push({ ref, status: "missing-file", detail: `no file matches ${ref.path}` });
+      continue;
+    }
+    if (candidates.length > 1) {
+      resolved.push({ ref, status: "ambiguous", detail: `${ref.path} matches ${candidates.slice(0, 3).join(", ")}${candidates.length > 3 ? ", …" : ""}` });
+      continue;
+    }
+    const file = candidates[0] as string;
+    if (ref.symbol !== undefined || ref.jsonKey !== undefined || ref.line !== undefined) {
+      const source = safeRead(repo.root, file);
+      if (ref.symbol !== undefined && !hasSymbol(source, ref.symbol)) {
+        resolved.push({ ref, status: "missing-symbol", file, detail: `${ref.symbol} not defined in ${file}` });
+        continue;
+      }
+      if (ref.jsonKey !== undefined && !hasJsonKey(source, ref.jsonKey)) {
+        resolved.push({ ref, status: "missing-symbol", file, detail: `key ${ref.jsonKey} not in ${file}` });
+        continue;
+      }
+      if (ref.line !== undefined && ref.line > source.split("\n").length) {
+        resolved.push({ ref, status: "missing-symbol", file, detail: `${file} has fewer than ${ref.line} lines` });
+        continue;
+      }
+    }
+    resolved.push({ ref, status: "ok", file });
+  }
+  return resolved;
+}
+
+function reportDoc(repo: RepoIndex, manifest: Manifest, doc: string, body: string): DocReport {
+  const refs = resolveDocRefs(repo, doc, body);
+  const broken = refs.filter((r) => r.status !== "ok");
+  // Links to other context docs are validated but are not sources: a doc goes stale when code changes.
+  const isOwnDoc = (f: string) => f.startsWith(`${repo.contextDir}/`) || f === "AGENTS.md" || f.endsWith("/AGENTS.md");
+  const sources = [...new Set(refs.flatMap((r) => (r.status === "ok" && !isOwnDoc(r.file) ? [r.file] : [])))].sort();
+  const entry = manifest.docs[doc];
+  const changed = entry
+    ? Object.entries(entry.sources).filter(([file, hash]) => repo.files.has(file) && hashFile(repo.root, file) !== hash).map(([file]) => file)
+    : [];
+  const status: DocStatus = broken.length > 0 ? "broken" : !entry ? "unstamped" : changed.length > 0 ? "changed" : "fresh";
+  return { doc, status, broken, changed, sources };
+}
+
+export function runCheck(root: string, options: CheckOptions = {}): CheckReport {
+  const contextDir = options.contextDir ?? ".context";
+  const repo = indexRepo(root, contextDir);
+  const manifest = loadManifest(root, contextDir);
+  const docs = ownedDocs(root, contextDir, repo.files).map((doc) => reportDoc(repo, manifest, doc, docBody(root, doc)));
+
+  const external: DocReport[] = [];
+  if (options.external) {
+    const owned = new Set(docs.map((d) => d.doc));
+    for (const entry of inventory(root, [...repo.files], contextDir)) {
+      const isText = /\.(md|mdx|mdc|txt)$/i.test(entry.path) || /^\.(cursor|windsur|cline)rules$/.test(entry.path);
+      if (owned.has(entry.path) || !isText) continue;
+      const refs = resolveDocRefs(repo, entry.path, safeRead(root, entry.path));
+      // Only claims with a directory are reported: bare names in prose are too often not refs.
+      const broken = refs.filter((r) => r.status === "missing-file" && r.ref.path.includes("/"));
+      if (broken.length > 0) external.push({ doc: entry.path, status: "broken", broken, changed: [], sources: [] });
+    }
+  }
+  return { docs, external };
+}
+
+export interface StampResult {
+  stamped: string[];
+  refused: DocReport[];
+}
+
+/**
+ * Record the current hashes of every source a doc references: "this doc is accurate as of now".
+ * Docs with broken refs are refused unless `force`, so a stamp never blesses a wrong ref.
+ */
+export function stampDocs(root: string, options: { contextDir?: string; docs?: string[]; force?: boolean } = {}): StampResult {
+  const contextDir = options.contextDir ?? ".context";
+  const repo = indexRepo(root, contextDir);
+  const manifest = loadManifest(root, contextDir);
+  const targets = options.docs?.length ? options.docs : ownedDocs(root, contextDir, repo.files);
+  const commit = headCommit(root);
+  const today = new Date().toISOString().slice(0, 10);
+  const result: StampResult = { stamped: [], refused: [] };
+
+  for (const doc of targets) {
+    const report = reportDoc(repo, manifest, doc, docBody(root, doc));
+    if (report.broken.length > 0 && !options.force) {
+      result.refused.push(report);
+      continue;
+    }
+    const sources: Record<string, string> = {};
+    for (const file of report.sources) {
+      const hash = hashFile(root, file);
+      if (hash) sources[file] = hash;
+    }
+    manifest.docs[doc] = { ...(commit ? { commit } : {}), stamped: today, sources };
+    result.stamped.push(doc);
+  }
+  // Forget docs that no longer exist.
+  for (const doc of Object.keys(manifest.docs)) if (!existsSync(join(root, doc))) delete manifest.docs[doc];
+  saveManifest(root, contextDir, manifest);
+  return result;
+}

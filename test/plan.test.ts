@@ -1,18 +1,10 @@
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readdirSync, readFileSync } from "node:fs";
+
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { BEGIN, END } from "../src/markers.js";
 import { buildPlan } from "../src/plan.js";
-
-function fixture(files: Record<string, string>): string {
-  const root = mkdtempSync(join(tmpdir(), "ctxmap-"));
-  for (const [path, content] of Object.entries(files)) {
-    mkdirSync(join(root, path, ".."), { recursive: true });
-    writeFileSync(join(root, path), content);
-  }
-  return root;
-}
+import { fixture } from "./helpers/fixture.js";
 
 function snapshot(root: string, dir = ""): Record<string, string> {
   const out: Record<string, string> = {};

@@ -6,15 +6,23 @@ Design and roadmap: [docs/BRIEF.md](docs/BRIEF.md).
 
 ## Status
 
-Milestone 1: inventory and dry-run plan (no LLM, no writes).
+Milestones 1–2: inventory/plan, and doc freshness (no LLM yet). See the roadmap in [docs/BRIEF.md](docs/BRIEF.md).
 
 ```
-npm install
-npm run dev -- plan /path/to/repo        # or: init /path/to/repo --dry-run
-npm run dev -- plan /path/to/repo --json
+ctxmap plan [path]              # what init would write; existing docs, real commands, token estimate
+ctxmap check [path]             # validate refs in .context/ docs + AGENTS.md block; exit 1 on broken refs
+ctxmap check [path] --external  # also list broken file refs in existing docs (README, docs/, ...)
+ctxmap stamp [path] [doc...]    # mark docs verified: record source hashes in .context/manifest.yaml
+ctxmap hooks install [path]     # git pre-commit check + Claude Code edit hook
 ```
 
-The plan shows existing agent/human docs (never rewritten), real commands with their source file, the files `init` would write (only inside `<!-- ctxmap:begin -->` / `<!-- ctxmap:end -->` blocks), always-loaded token cost before/after, and an LLM token estimate.
+Refs are code spans in docs: `src/a.ts`, `src/a.ts:Class.method()`, `src/a.ts:42`, `package.json#scripts.test`. A doc is **broken** when a ref no longer resolves (fails `check`), **changed** when a referenced file changed since it was stamped (warning; fails with `--strict`), **unstamped** when it isn't in the manifest yet.
+
+The Claude Code hook runs before Edit/Write: when the file is covered by a doc, the agent gets the covering docs and the gotchas that reference that file, once per file per session.
+
+Measurement on a real repo (−21% tokens, fewer turns, gotchas prevented a real bug): [docs/measurements/2026-10-14-valija](docs/measurements/2026-10-14-valija/README.md).
+
+During development: `npm run dev -- <command> ...`.
 
 ## Development
 

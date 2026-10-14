@@ -148,3 +148,23 @@ Staleness = any source hash changed OR any symbol missing. Optionally hash only 
 - Output folder configurable (`--context-dir`, default `.context`).
 - Model guidance: `init` (flow discovery, gotchas) with a mid/high-tier model; `update` (old doc + diff) with a cheap model; `check` uses none. Ship as defaults in API-mode config and as advice in SKILL.md. Verify by comparing generated docs against `docs/measurements/2026-10-14-valija/reference-docs/`.
 - Measured on valija (see `docs/measurements/2026-10-14-valija/`): −21% input tokens overall, −26/−45% on flow questions, +5% on an uncovered question; gotchas prevented a real bug in 2/2 feature plans. Priority: gotchas quality, ref validation in `check`.
+
+## Large existing repos (the main use case)
+Value must not depend on documenting the whole repo. Strategy:
+- **Coverage by priority, not completeness.** Rank areas by git churn (last ~90 days) × cross-module fan-out; propose flows only for the hot spots (default budget ~6–10 flows). Most changes touch a small part of a large repo.
+- **Grow on demand.** `add-flow` when a task needs it; later, propose a flow doc when a session spent many turns exploring one area.
+- **Mine gotchas from history** (fix/revert commits, PR review comments, ADRs/`advances/`-style records, "must/never/always" comments). Old repos have the richest history, so this gets better with size. Each gotcha cites its evidence (commit/PR).
+- **Edit-time injection** (Claude Code PreToolUse hook, `ctxmap hook claude`): the manifest maps file → docs/gotchas, so the agent gets the relevant invariant when it edits the file. The always-loaded index can stay tiny no matter how big the repo is.
+- **Immediate value with zero LLM:** `ctxmap check --external` finds broken file refs in the repo's existing docs (README, docs/, CLAUDE.md…). Large repos have plenty.
+- **Bounded cost:** per-flow input capped to files on the path; plan + estimate + confirmation before spending; nested `AGENTS.md` only for packages with real gotchas.
+- **Prove it on their repo:** `ctxmap eval` replays recent merged PRs as planning tasks ("plan this change") with vs without docs and compares against the files the PR actually touched — ground truth for free.
+- **Performance:** `check` and the hook only hash files referenced in the manifest; a `git ls-files` listing is the only repo-wide step.
+
+## Roadmap (updated 2026-10-14)
+1. ✅ Inventory + dry-run plan.
+2. ✅ Manifest + `check` (ref validation: file, symbol, json key, line) + `stamp` + git pre-commit + Claude Code edit hook (verified end-to-end with a real headless session).
+3. Flow candidates by churn × fan-out (static, no LLM) + gotcha mining from git history (candidates with evidence).
+4. LLM generation (`init`, `add-flow`) via shared prompts; skill mode first. Gold reference: `docs/measurements/2026-10-14-valija/reference-docs/`.
+5. Diff-aware `update` (cheap model).
+6. `eval` (PR replay) on a large real repo.
+7. Later: suggest turning verifiable gotchas into tests/lint rules; symbol-body hashing to cut "changed" noise.
