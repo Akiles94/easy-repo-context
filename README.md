@@ -24,7 +24,7 @@ You benefit indirectly: answers that are more often right, plans that respect yo
 | Kept current | Regenerated | Rarely | Checked on every commit; patched from the git diff |
 | Your existing docs and agent files | Separate | Often overwritten | Linked, never rewritten |
 
-Auto-generated agent files that repeat what the code already says have been reported (an ETH Zurich study cited in the AGENTS.md community) to make agents slower and more expensive. That's why this tool documents less, not more.
+A 2026 study of repository context files ([Gloaguen et al., *Evaluating AGENTS.md*](https://arxiv.org/abs/2602.11988)) found that they do not generally improve coding agents' task success, whether LLM-generated or written by developers, and raise inference cost by over 20% on average. That's why this tool documents less, not more: only what code doesn't reveal, with most of it loaded only when relevant.
 
 ## Proof of concept
 Two TypeScript repos, Claude Code in headless mode answering the same questions with and without the generated context. Small samples (2–4 runs per question), one answering model, questions written by the author. Directional results, not a benchmark. Everything (questions, answers, generated docs, scripts) is in [`docs/measurements/`](docs/measurements/).

@@ -20,7 +20,7 @@ User preferences: ask before actions that weren't requested or that spend a lot 
 - Couples to existing docs, agents, skills and conventions; never clobbers them.
 
 ## Key finding that shapes the design
-ETH Zurich research (cited in community AGENTS.md skills): auto-generated AGENTS.md files cut task success ~3% and raised cost 20%+ because they duplicated what agents can find by reading code. So:
+Research (Gloaguen et al., *Evaluating AGENTS.md*, https://arxiv.org/abs/2602.11988; abstract: context files don't generally improve success and raise cost >20%; the figures below come from secondary summaries): auto-generated AGENTS.md files cut task success ~3% and raised cost 20%+ because they duplicated what agents can find by reading code. So:
 - Document only what is NOT cheaply discoverable: cross-module flows, gotchas, rationale, invariants, "don't touch", where things live.
 - Never include: directory listings, file-by-file summaries, code style the agent infers from code, copied code.
 - Always-loaded context must be tiny. Everything else is loaded on demand.
