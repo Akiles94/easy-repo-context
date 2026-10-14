@@ -14,6 +14,7 @@ import { renderPlan } from "./render.js";
 import { planUpdate, type UpdatePlan } from "./update.js";
 
 const HELP = `easy-repo-context — lean, always-current AI context for a repository
+(\`erctx\` is a short alias for the same command.)
 
 Usage:
   easy-repo-context plan [path]               Inventory the repo and show what init would write (no LLM, no writes)

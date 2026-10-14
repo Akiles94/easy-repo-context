@@ -30,6 +30,7 @@ AGENTS.md              # a managed index block (~25 lines); your own text is nev
 npm i -g easy-repo-context            # or, in a Node project: npm i -D easy-repo-context
 easy-repo-context skill install       # Claude Code skill for this repo (--global for all repos)
 ```
+`erctx` is a short alias: `erctx check` is the same as `easy-repo-context check`, and `npx erctx` works too.
 Then ask your agent: *"set up repo context with easy-repo-context"*. It shows you the plan, proposes flows for you to confirm, writes the docs, validates every reference and installs the hooks.
 
 Other agents: ask them to run `easy-repo-context prompt init` and follow it.
@@ -64,6 +65,8 @@ npm install
 npm run typecheck && npm test && npm run build
 npm run dev -- <command> [args]
 ```
+
+Publishing: `npm publish` from the root (runs typecheck, tests and build first), then `npm publish` in `packages/erctx`, which only reserves the short name and runs this package.
 
 ## License
 MIT © Oscar Vinueza

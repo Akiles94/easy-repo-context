@@ -1,0 +1,15 @@
+{
+  "name": "erctx",
+  "version": "0.1.0",
+  "description": "Short command for easy-repo-context: lean, always-current context for AI coding agents.",
+  "keywords": ["easy-repo-context", "agents-md", "ai", "context"],
+  "homepage": "https://github.com/Akiles94/easy-repo-context#readme",
+  "repository": { "type": "git", "url": "git+https://github.com/Akiles94/easy-repo-context.git", "directory": "packages/erctx" },
+  "license": "MIT",
+  "author": "Oscar Vinueza",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "bin": { "erctx": "cli.js" },
+  "files": ["cli.js", "README.md"],
+  "dependencies": { "easy-repo-context": "^0.1.0" }
+}

@@ -26,7 +26,8 @@
     "node": ">=22"
   },
   "bin": {
-    "easy-repo-context": "dist/cli.js"
+    "easy-repo-context": "dist/cli.js",
+    "erctx": "dist/cli.js"
   },
   "files": [
     "dist",
