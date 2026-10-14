@@ -164,7 +164,7 @@ Value must not depend on documenting the whole repo. Strategy:
 1. ✅ Inventory + dry-run plan.
 2. ✅ Manifest + `check` (ref validation: file, symbol, json key, line) + `stamp` + git pre-commit + Claude Code edit hook (verified end-to-end with a real headless session).
 3. ✅ Flow candidates by churn × fan-out (static, no LLM) + gotcha evidence: repeated fix commits per file, warning comments in hot code, decision records. Tested on valija and outline/outline. Known noise: visual/CSS fix hotspots; the LLM step filters.
-4. LLM generation (`init`, `add-flow`) via shared prompts; skill mode first. Gold reference: `docs/measurements/2026-10-14-valija/reference-docs/`.
+4. ✅ LLM generation via `ctxmap prompt init` (skill mode) + deterministic `ctxmap index`. Measured: generated docs keep the quality win (4/4 plans avoid the bug), −10/−12% tokens overall; feature planning costs more (+18/+46%), to tune. Haiku generation is enough ($0.14 vs $0.77). See `docs/measurements/2026-10-14-valija-generated/`. Pending: `add-flow`, API mode.
 5. Diff-aware `update` (cheap model).
 6. `eval` (PR replay) on a large real repo.
 7. Later: suggest turning verifiable gotchas into tests/lint rules; symbol-body hashing to cut "changed" noise.
