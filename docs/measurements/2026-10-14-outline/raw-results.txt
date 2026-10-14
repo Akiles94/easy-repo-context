@@ -1,0 +1,29 @@
+run        turns    in_tok out_tok  cost$  secs
+OA-q1-r1     21    471673    7171  0.349    53  claude-haiku-5-5,claude-sonnet-5-5
+OA-q1-r2     19    417745    6865  0.249    53  claude-haiku-5-5,claude-sonnet-5-5
+OA-q2-r1     11    222370    3874  0.269    34  claude-haiku-5-5,claude-sonnet-5-5
+OA-q2-r2     12    271952    4119  0.151    33  claude-haiku-5-5,claude-sonnet-5-5
+OA-q3-r1      4    158748    3653  0.109    31  claude-haiku-5-5,claude-sonnet-5-5
+OA-q3-r2      5    168412    4585  0.118    37  claude-haiku-5-5,claude-sonnet-5-5
+OA-q3-r3     11    160782    4797  0.110    36  claude-haiku-5-5,claude-sonnet-5-5
+OA-q3-r4      5    164699    3996  0.108    33  claude-haiku-5-5,claude-sonnet-5-5
+OA-q4-r1      6    114518    2067  0.082    20  claude-haiku-5-5,claude-sonnet-5-5
+OA-q4-r2      8    155701    2651  0.079    25  claude-haiku-5-5,claude-sonnet-5-5
+OG2-q1-r1      9    170107    3720  0.239    29  claude-haiku-5-5,claude-sonnet-5-5
+OG2-q1-r2      7    124567    3141  0.096    25  claude-haiku-5-5,claude-sonnet-5-5
+OG2-q2-r1     13    238130    4568  0.292    39  claude-haiku-5-5,claude-sonnet-5-5
+OG2-q2-r2     10    181165    3407  0.141    30  claude-haiku-5-5,claude-sonnet-5-5
+OG2-q3-r1      5    168090    4293  0.129    31  claude-haiku-5-5,claude-sonnet-5-5
+OG2-q3-r2      4    168348    3958  0.104    32  claude-haiku-5-5,claude-sonnet-5-5
+OG2-q3-r3      6    176805    3935  0.124    32  claude-haiku-5-5,claude-sonnet-5-5
+OG2-q3-r4      6    167513    3397  0.100    27  claude-haiku-5-5,claude-sonnet-5-5
+OG2-q4-r1      6    119669    2344  0.092    20  claude-haiku-5-5,claude-sonnet-5-5
+OG2-q4-r2      9    161262    2637  0.085    26  claude-haiku-5-5,claude-sonnet-5-5
+
+mean input tokens (k) / turns, and delta vs A
+q                      OA                 OG2
+q1         445k/20.0            147k/8.0   -67%
+q2         247k/11.5            210k/11.5  -15%
+q3         163k/6.2             170k/5.2    +4%
+q4         135k/7.0             140k/7.5    +4%
+total           990k   +0%          668k  -33%

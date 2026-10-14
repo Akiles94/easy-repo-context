@@ -1,0 +1,1 @@
+Quiero añadir un endpoint de API `comments.pin` para fijar un comentario dentro de un documento, de forma que los demás usuarios conectados lo vean fijado en tiempo real. ¿Qué archivos tocarías y qué debo tener en cuenta? No edites nada, solo dame el plan.

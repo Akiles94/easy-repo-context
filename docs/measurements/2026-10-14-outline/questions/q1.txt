@@ -1,0 +1,1 @@
+¿Cómo funciona actualizar un documento desde la API (`documents.update`) en este repo? Explícame el recorrido por el código y sus efectos secundarios.

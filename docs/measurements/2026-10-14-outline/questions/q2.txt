@@ -1,0 +1,1 @@
+¿Cómo se controla quién puede ver un documento compartido públicamente (shares)? Explícame el recorrido por el código y dónde se aplican los permisos.

@@ -1,0 +1,37 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index f0dffee0..733cf3d2 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -221,3 +221,32 @@ yarn test:shared   # All shared code tests
+ - Follow OWASP guidelines.
+ - Never store sensitive data in plain text.
+ - Use environment variables for secrets.
++
++<!-- easy-repo-context:begin -->
++# Repo context (easy-repo-context)
++Outline, a collaborative team knowledge base: React web client, Koa API, real-time Y.js collaboration, optional plugins.
++
++## Commands
++- install: `yarn install` (yarn.lock)
++- build: `yarn run build:i18n` (package.json#scripts.build:i18n)
++- build: `yarn run build:server` (package.json#scripts.build:server)
++- build: `yarn run build` (package.json#scripts.build)
++- run: `yarn run start` (package.json#scripts.start)
++- run: `yarn run dev` (package.json#scripts.dev)
++- lint: `yarn run lint` (package.json#scripts.lint)
++- lint: `yarn run lint:changed` (package.json#scripts.lint:changed)
++
++## Where to look
++- Architecture, components, data stores: `.context/overview.md`
++- Invariants and traps: `.context/gotchas.md` (before changing code, read "Repo-wide" + the areas you touch)
++- Flows (read only the one matching the task):
++  - attachment-upload: attachments.create → presigned POST/PUT → browser uploads → (local storage) files.create → attachment row settles → `.context/flows/attachment-upload.md`
++  - comment-create: comments.create → lock document row → apply comment mark to ProseMirror state → silent save → comment row → `.context/flows/comment-create.md`
++  - document-list: documents.list → filter/status → membership-scoped query + COUNT → presented documents → `.context/flows/document-list.md`
++  - document-update: documents.update → documentUpdater → row lock → save → afterCommit collaboration notify → `.context/flows/document-update.md`
++  - share-create: shares.create → team `createShare` check → find-or-create unrevoked share → publish checks on stored share → `.context/flows/share-create.md`
++- Existing docs (authoritative, not duplicated): `README.md`, `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/SERVICES.md`, `docs/TRANSLATION.md`, `server/mcp/README.md`, `shared/editor/commands/README.md`, `shared/i18n/README.md`
++- Agents/skills/hooks: `.claude/skills/`, `server/mcp/`
++- Before editing a file, run `easy-repo-context context <file>`: it lists the flow docs and gotchas that cover it.
++- How to present answers: `.context/presentation.md`
++<!-- easy-repo-context:end -->
