@@ -53,4 +53,4 @@ Change: `gotchas.md` split into "Repo-wide" (≤ 8) and "By area"; the AGENTS.md
 
 q3 plans using `session.write()` across both rounds: **no docs 1/4**, hand-written 2/2, Sonnet 4/4, Haiku 2/2, Haiku two-level 4/4 → **12/12 with docs**.
 
-Findings: the two-level structure cut the feature-planning overhead from +36% to +13% (turns 12.5 → 9.5) without losing the invariant; q1 varies a lot between runs and doc sets (−29% to −49%). Remaining overhead on q3 is extra exploration that produces longer, more complete plans. Cost of this round: $0.12 generation + ~$1.95 answering.
+Findings: the two-level structure cut the feature-planning overhead from +36% to +13% (turns 12.5 → 9.5) without losing the invariant; q1 varies a lot between runs and doc sets (−29% to −49%). Remaining overhead on q3 is extra exploration that produces longer, more complete plans. Cost of this round: $0.12 generation + $1.73 answering.
