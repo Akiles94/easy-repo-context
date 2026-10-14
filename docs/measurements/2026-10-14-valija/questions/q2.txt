@@ -1,0 +1,1 @@
+Si uso el mismo vault en dos computadoras con Dropbox, ¿cómo detecta valija que hubo un conflicto y qué hace en ese caso?

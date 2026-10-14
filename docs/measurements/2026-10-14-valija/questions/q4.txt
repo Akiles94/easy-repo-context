@@ -1,0 +1,1 @@
+¿Cómo se genera el recovery kit cuando hago `valija init`?

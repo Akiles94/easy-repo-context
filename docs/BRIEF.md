@@ -146,3 +146,5 @@ Staleness = any source hash changed OR any symbol missing. Optionally hash only 
 - Acceptance reworded: `init` does not regenerate docs whose hashes are unchanged (LLM output is not deterministic).
 - Large flows split into sub-flows linked via `Related:` instead of exceeding ~400 tokens.
 - Output folder configurable (`--context-dir`, default `.context`).
+- Model guidance: `init` (flow discovery, gotchas) with a mid/high-tier model; `update` (old doc + diff) with a cheap model; `check` uses none. Ship as defaults in API-mode config and as advice in SKILL.md. Verify by comparing generated docs against `docs/measurements/2026-10-14-valija/reference-docs/`.
+- Measured on valija (see `docs/measurements/2026-10-14-valija/`): −21% input tokens overall, −26/−45% on flow questions, +5% on an uncovered question; gotchas prevented a real bug in 2/2 feature plans. Priority: gotchas quality, ref validation in `check`.

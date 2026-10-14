@@ -1,0 +1,1 @@
+¿Cómo funciona guardar contexto desde un cliente MCP en este repo? Explícame el recorrido por el código y en qué momento se cifra la información.

@@ -1,0 +1,24 @@
+run        turns    in_tok out_tok  cost$  secs
+A-q1-r1     10    172510    3856  0.251    32  claude-haiku-5-5,claude-sonnet-5-5
+A-q1-r2     15    300167    4266  0.170    40  claude-haiku-5-5,claude-sonnet-5-5
+A-q2-r1      6    154099    2383  0.196    23  claude-haiku-5-5,claude-sonnet-5-5
+A-q2-r2     10    201323    2831  0.103    25  claude-haiku-5-5,claude-sonnet-5-5
+A-q3-r1      5    189683    3058  0.106    29  claude-haiku-5-5,claude-sonnet-5-5
+A-q3-r2      5    191663    3363  0.102    32  claude-haiku-5-5,claude-sonnet-5-5
+A-q4-r1      7    190182    1864  0.094    19  claude-haiku-5-5,claude-sonnet-5-5
+A-q4-r2      6    189380    1789  0.081    17  claude-haiku-5-5,claude-sonnet-5-5
+B-q1-r1      4    110655    2096  0.176    19  claude-haiku-5-5,claude-sonnet-5-5
+B-q1-r2      5    149159    2468  0.065    21  claude-haiku-5-5,claude-sonnet-5-5
+B-q2-r1      5    151074    1931  0.184    19  claude-haiku-5-5,claude-sonnet-5-5
+B-q2-r2      4    110990    1748  0.054    22  claude-haiku-5-5,claude-sonnet-5-5
+B-q3-r1      5    168819    3197  0.127    30  claude-haiku-5-5,claude-sonnet-5-5
+B-q3-r2      5    160457    3102  0.101    26  claude-haiku-5-5,claude-sonnet-5-5
+B-q4-r1      8    195001    2164  0.103    23  claude-haiku-5-5,claude-sonnet-5-5
+B-q4-r2      8    203391    2200  0.106    21  claude-haiku-5-5,claude-sonnet-5-5
+
+q     A turns  B turns      A in      B in    Δin    A $    B $     Δ$   A s   B s
+q1       12.5      4.5    236338    129907   -45%  0.210  0.121   -43%    36    20
+q2        8.0      4.5    177711    131032   -26%  0.150  0.119   -20%    24    20
+q3        5.0      5.0    190673    164638   -14%  0.104  0.114    10%    30    28
+q4        6.5      8.0    189781    199196     5%  0.087  0.105    20%    18    22
+total in_tok A=794504 B=624773 (-21%), cost A=$0.55 B=$0.46 (-17%)

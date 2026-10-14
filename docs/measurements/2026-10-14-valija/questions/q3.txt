@@ -1,0 +1,1 @@
+Quiero añadir una herramienta MCP `archive_context` que archive un item por id. ¿Qué archivos tocarías y qué debo tener en cuenta? No edites nada, solo dame el plan.
