@@ -12,7 +12,7 @@ Run the tool as `easy-repo-context <command>`; if it isn't found, use `npx easy-
 ## Set up context for a repo (first time)
 1. Run `easy-repo-context plan` and show the user the summary: existing docs it will link (never rewrite), files it will write, the token estimate. Ask before continuing — generation reads a fair amount of code.
 2. Run `easy-repo-context prompt init` and follow it exactly. It asks you to propose flows and confirm them with the user before writing.
-3. Offer `easy-repo-context hooks install`: a git pre-commit check for broken refs, and a Claude Code hook that shows the relevant gotchas when a covered file is edited.
+3. Offer `easy-repo-context hooks install`: a git pre-commit check that blocks commits with broken refs, plus (in repos that use Claude Code) an edit hook that shows the relevant gotchas automatically when a covered file is edited.
 
 ## Docs are stale (check reports "changed" or "broken")
 1. Run `easy-repo-context prompt update` and follow it. It works from the git diff since each doc was verified; most docs need no edit or a one-line fix.
@@ -20,9 +20,12 @@ Run the tool as `easy-repo-context <command>`; if it isn't found, use `npx easy-
 
 ## While working on code in a repo that has these docs
 - Read `AGENTS.md` first; open only the flow doc and the gotchas sections for the area you're changing.
+- Before editing a file, run `easy-repo-context context <file>` to see the docs and gotchas that cover it.
 - If your change makes a doc false, update that doc in the same change and run `easy-repo-context check`.
 
 ## Model advice
-- `init`: a fast, cheap model works well (measured: same invariants found as a larger model at ~1/5 of the cost); use a stronger one for very large or unusual repos.
-- `update`: a cheap model is enough.
-- `check`, `plan`, `index`, `stamp`, `update` (without the prompt) use no model at all.
+The CLI never calls a model; your agent does the writing. A small, fast model tier is enough for both generation and updates:
+- Anthropic: Haiku · OpenAI: a "mini" model · Google: a Flash model (examples; use the current small tier of your provider).
+- Measured with Claude Haiku: same invariants found as a larger model at ~1/5 of the cost. Other providers' small tiers are expected to behave similarly but haven't been measured.
+- Use a stronger tier for very large or unusual repos, or if `check` keeps finding broken refs after generation.
+- `check`, `plan`, `candidates`, `index`, `stamp`, `context` and `update` (without the prompt) use no model at all.

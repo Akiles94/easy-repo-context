@@ -64,7 +64,7 @@ export function renderAgentsBlock(root: string, contextDir = ".context"): string
   const configDirs = [...new Set(docs.filter((d) => d.kind === "agent-config" && !d.path.includes("settings")).map((d) => d.path.split("/").slice(0, 2).join("/")))];
   if (configDirs.length > 0) lines.push(`- Agents/skills/hooks: ${configDirs.slice(0, 6).map((d) => `\`${d}/\``).join(", ")}`);
 
-  lines.push("- Before editing a module, read its flow doc if one exists.");
+  lines.push("- Before editing a file, run `easy-repo-context context <file>`: it lists the flow docs and gotchas that cover it.");
   lines.push(`- How to present answers: \`${contextDir}/presentation.md\``);
   return lines.join("\n");
 }

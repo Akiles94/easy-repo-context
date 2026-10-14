@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { type CheckReport, runCheck, stampDocs } from "./check.js";
 import { loadPrompt, packageRoot, writeIndex } from "./agents-index.js";
 import { type Candidates, findCandidates } from "./candidates.js";
-import { runClaudeHook } from "./hook.js";
+import { contextForFile, renderEditContext, runClaudeHook } from "./hook.js";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { installClaudeHook, installGitHook, installSkill, isOnPath, toolCommand } from "./install.js";
 import { buildPlan } from "./plan.js";
 import { renderPlan } from "./render.js";
@@ -26,9 +26,10 @@ Usage:
   easy-repo-context prompt init [--auto]      Print the generation prompt for your AI agent (skill mode)
   easy-repo-context prompt update             Print the update prompt: the agent patches stale docs from the git diff
   easy-repo-context index [path]              Write the AGENTS.md block, CLAUDE.md/GEMINI.md pointers and presentation.md
-  easy-repo-context hooks install [path]      Install the git pre-commit check and the Claude Code edit hook
+  easy-repo-context hooks install [path]      Install the git pre-commit check (+ the Claude Code edit hook if .claude/ exists or --claude)
   easy-repo-context skill install [path]      Install the agent skill into <path>/.claude/skills (--global: ~/.claude/skills)
-  easy-repo-context hook claude               (internal) Claude Code PreToolUse hook; reads hook JSON on stdin
+  easy-repo-context context <file...>         Docs and gotchas covering a file: run it before editing (any agent)
+  easy-repo-context hook claude               (internal) Claude Code integration of \`context\`; reads hook JSON on stdin
 
 Options:
   --json             Machine-readable output
@@ -155,7 +156,12 @@ function main(argv: string[]): number {
       if (rest[0] !== "install") break;
       const root = resolve(rest[1] ?? ".");
       const both = !values.git && !values.claude;
-      const outcomes = [...(both || values.git ? [installGitHook(root)] : []), ...(both || values.claude ? [installClaudeHook(root)] : [])];
+      // The git hook works for everyone; tool integrations only where that tool is already in use.
+      const usesClaude = existsSync(join(root, ".claude")) || existsSync(join(root, "CLAUDE.md"));
+      const outcomes = [
+        ...(both || values.git ? [installGitHook(root)] : []),
+        ...(values.claude || (both && usesClaude) ? [installClaudeHook(root)] : []),
+      ];
       for (const o of outcomes) process.stdout.write(`${o.result.padEnd(15)} ${o.path}${o.note ? ` — ${o.note}` : ""}\n`);
       if (toolCommand(root) === "easy-repo-context" && !isOnPath("easy-repo-context")) {
         process.stdout.write(
@@ -172,6 +178,22 @@ function main(argv: string[]): number {
       const o = installSkill(join(packageRoot(), "skills", "easy-repo-context", "SKILL.md"), target);
       process.stdout.write(`${o.result.padEnd(15)} ${o.path}\n`);
       process.stdout.write("Other agents (Codex, Cursor, Gemini CLI…): ask them to run `easy-repo-context prompt init` and follow it.\n");
+      return 0;
+    }
+
+    case "context": {
+      // Agent-agnostic version of the edit hook: any agent can ask what covers a file before editing it.
+      const files = rest.length > 0 ? rest : [];
+      if (files.length === 0) {
+        process.stderr.write("usage: easy-repo-context context <file> [file...]\n");
+        return 1;
+      }
+      const root = resolve(".");
+      for (const f of files) {
+        const file = relative(root, resolve(f)).split(sep).join("/");
+        const text = renderEditContext(contextForFile(root, file, contextDir));
+        process.stdout.write(`${text ?? `No context docs cover ${file}.`}\n`);
+      }
       return 0;
     }
 

@@ -44,7 +44,7 @@ function bullets(markdown: string): string[] {
 
 export function renderEditContext(ctx: EditContext): string | undefined {
   if (ctx.docs.length === 0 && ctx.gotchas.length === 0) return undefined;
-  const lines = [`easy-repo-context: you are about to edit ${ctx.file}.`];
+  const lines = [`easy-repo-context: context for ${ctx.file}.`];
   if (ctx.docs.length > 0) lines.push(`Docs covering it (read before editing if you haven't): ${ctx.docs.join(", ")}`);
   if (ctx.gotchas.length > 0) lines.push("Gotchas for this file:", ...ctx.gotchas.map((g) => `- ${g}`));
   lines.push("If your change alters the behavior these docs describe, update them in the same change.");

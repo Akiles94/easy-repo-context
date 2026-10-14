@@ -56,3 +56,7 @@ it("fills prompt variables", () => {
   expect(text).toContain("Pick yourself.");
   expect(text).not.toMatch(/\{\{\w+\}\}/);
 });
+
+it("points agents to the agnostic context command", () => {
+  expect(renderAgentsBlock(repo())).toContain("run `easy-repo-context context <file>`");
+});
