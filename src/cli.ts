@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { type CheckReport, runCheck, stampDocs } from "./check.js";
+import { loadPrompt, writeIndex } from "./agents-index.js";
 import { type Candidates, findCandidates } from "./candidates.js";
 import { runClaudeHook } from "./hook.js";
 import { installClaudeHook, installGitHook } from "./install.js";
@@ -17,6 +18,8 @@ Usage:
   ctxmap check [path]              Validate refs in context docs and report stale ones (no LLM, no network)
   ctxmap stamp [path] [doc...]     Mark docs as verified now: record source hashes in the manifest
   ctxmap candidates [path]         Rank flow candidates and gotcha evidence from code + git history (no LLM)
+  ctxmap prompt init [--auto]      Print the generation prompt for your AI agent (skill mode)
+  ctxmap index [path]              Write the AGENTS.md block, CLAUDE.md/GEMINI.md pointers and presentation.md
   ctxmap hooks install [path]      Install the git pre-commit check and the Claude Code edit hook
   ctxmap hook claude               (internal) Claude Code PreToolUse hook; reads hook JSON on stdin
 
@@ -26,6 +29,7 @@ Options:
   --external         check: also report broken file refs in existing docs (README, docs/, CLAUDE.md...)
   --force            stamp: stamp docs even if they have broken refs
   --limit <n>        candidates: how many flows to list (default 10)
+  --auto             prompt: the agent picks flows itself instead of asking you first
   --git / --claude   hooks install: only that hook (default: both)
   --pointers         plan: also create CLAUDE.md / GEMINI.md pointers when they don't exist
   --flows <n>        plan: number of flows to propose (default 6)
@@ -48,6 +52,7 @@ function main(argv: string[]): number {
       pointers: { type: "boolean" },
       flows: { type: "string" },
       limit: { type: "string" },
+      auto: { type: "boolean" },
       "context-dir": { type: "string" },
       help: { type: "boolean", short: "h" },
     },
@@ -64,8 +69,10 @@ function main(argv: string[]): number {
     case "plan":
     case "init": {
       if (command === "init" && !values["dry-run"]) {
-        process.stderr.write("ctxmap init: generation is not implemented yet; run with --dry-run to see the plan.\n");
-        return 2;
+        process.stderr.write(
+          "ctxmap init generates docs with your AI agent (skill mode): ask it to run `ctxmap prompt init` and follow it.\n" +
+            "Direct API mode is not available yet. Showing the plan:\n\n",
+        );
       }
       const flows = values.flows ? Number.parseInt(values.flows, 10) : undefined;
       if (flows !== undefined && (!Number.isFinite(flows) || flows < 0)) {
@@ -99,6 +106,23 @@ function main(argv: string[]): number {
       const limit = values.limit ? Number.parseInt(values.limit, 10) : undefined;
       const result = findCandidates(resolve(rest[0] ?? "."), { limit });
       process.stdout.write(values.json ? `${JSON.stringify(result, null, 2)}\n` : renderCandidates(result));
+      return 0;
+    }
+
+    case "prompt": {
+      if (rest[0] !== "init") break;
+      const flows = values.flows ?? "5";
+      const choose = values.auto
+        ? "Do not ask: choose the flows yourself and state the choice and reasons in your final report."
+        : "Before writing anything, present the chosen flows as a short list (name — trigger — why) and ask the user to confirm or edit it.";
+      process.stdout.write(loadPrompt("init", { FLOW_COUNT: flows, CHOOSE_MODE: choose }));
+      return 0;
+    }
+
+    case "index": {
+      const result = writeIndex(resolve(rest[0] ?? "."), { contextDir, pointers: values.pointers });
+      for (const p of result.written) process.stdout.write(`written    ${p}\n`);
+      for (const p of result.unchanged) process.stdout.write(`unchanged  ${p}\n`);
       return 0;
     }
 
