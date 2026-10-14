@@ -47,7 +47,7 @@ export function renderAgentsBlock(root: string, contextDir = ".context"): string
 
   lines.push("", "## Where to look");
   if (overview) lines.push(`- Architecture, components, data stores: \`${contextDir}/overview.md\``);
-  if (has(`${contextDir}/gotchas.md`)) lines.push(`- Invariants and traps (read before changing code): \`${contextDir}/gotchas.md\``);
+  if (has(`${contextDir}/gotchas.md`)) lines.push(`- Invariants and traps: \`${contextDir}/gotchas.md\` (before changing code, read "Repo-wide" + the areas you touch)`);
   const flows = readFlows(root, contextDir);
   if (flows.length > 0) {
     lines.push("- Flows (read only the one matching the task):");

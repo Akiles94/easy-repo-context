@@ -11,7 +11,7 @@ Measured on a real repo: docs like these cut tokens 20–45% on "how does X work
 - English, telegraphic Markdown, even if the repo or the user uses another language.
 - Every code reference is a code span: `path/to/file.ts`, `path/to/file.ts:Class.method()`, `path/to/file.ts:functionName()`, `package.json#scripts.test`. Use paths from the repo root. Every ref must exist: `ctxmap check` validates them and you must fix every broken one.
 - Don't invent. If you didn't read it, don't claim it. Uncertain → leave it out.
-- Size limits: each flow ≤ ~25 lines; `overview.md` ≤ ~40 lines; `gotchas.md` 6–20 bullets.
+- Size limits: each flow ≤ ~25 lines; `overview.md` ≤ ~40 lines; `gotchas.md` 6–20 bullets (≤ 8 repo-wide).
 
 ## Steps
 
@@ -42,7 +42,18 @@ Measured on a real repo: docs like these cut tokens 20–45% on "how does X work
    - decision records / review notes listed in step 2;
    - what you saw while tracing: "every X must go through Y", work that must happen in the same transaction, ordering that matters, state kept in two places, values that must never reach some output, process rules (approval gates, generated files you must not hand-edit).
 
-   Each bullet: **the rule**, **why / what breaks**, a **ref** to where it's enforced or where it bites, and the **evidence** when you have it (commit hash, comment ref). Skip: generic advice ("handle errors", "write tests"), anything types/lint/tests already enforce, purely visual or styling fixes, one-off bugs that can't recur.
+   Each bullet: **the rule**, **why / what breaks**, a **ref** to where it's enforced or where it bites, and the **evidence** when you have it (commit hash, comment ref). One or two sentences; no sub-bullets. Skip: generic advice ("handle errors", "write tests"), anything types/lint/tests already enforce, purely visual or styling fixes, one-off bugs that can't recur.
+
+   Structure it in two levels so agents read only what applies:
+   ```
+   # Gotchas
+   ## Repo-wide
+   - <≤ 8 bullets: rules any change anywhere can break, most damaging first>
+   ## By area
+   ### <module or area name>
+   - <rules that only matter when touching this area>
+   ```
+   Put a rule in exactly one place. Process rules (approval gates, generated files) are repo-wide.
 
 6. **Write `overview.md`:**
    ```
@@ -77,9 +88,13 @@ Gotchas: retries reuse the idempotency key; a new key double-charges.
 Related: `flows/refund.md`, `docs/billing.md`
 ```
 
-`gotchas.md` bullets:
+`gotchas.md`:
 ```
+# Gotchas
+## Repo-wide
 - Money is integer cents everywhere (`billing/money.ts:Money`). Floats round differently in the ledger and the PSP; reconciliation fails days later. Evidence: a1b2c3d "fix: off-by-one cent in VAT".
 - Jobs are enqueued after commit (`db/tx.ts:afterCommit()`), never inside a transaction: a rolled-back tx would still send the email.
+## By area
+### ledger
 - `ledger_entries` is append-only; corrections are new reversing entries (`ledger/post.ts:reverse()`). Updating a row breaks the audit export.
 ```
