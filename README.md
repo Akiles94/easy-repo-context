@@ -6,7 +6,7 @@ Design and roadmap: [docs/BRIEF.md](docs/BRIEF.md).
 
 ## Status
 
-Milestones 1–3: inventory/plan, doc freshness, and flow/gotcha candidates (no LLM yet). See the roadmap in [docs/BRIEF.md](docs/BRIEF.md).
+Milestones 1–5: inventory/plan, doc freshness, flow/gotcha candidates, generation (skill mode) and diff-aware update. See the roadmap in [docs/BRIEF.md](docs/BRIEF.md).
 
 ```
 ctxmap plan [path]              # what init would write; existing docs, real commands, token estimate
@@ -15,7 +15,13 @@ ctxmap check [path] --external  # also list broken file refs in existing docs (R
 ctxmap stamp [path] [doc...]    # mark docs verified: record source hashes in .context/manifest.yaml
 ctxmap hooks install [path]     # git pre-commit check + Claude Code edit hook
 ctxmap candidates [path]        # rank flow candidates; gotcha evidence from fix commits and warning comments
+ctxmap prompt init [--auto]     # generation prompt for your AI agent (it writes .context/, then runs check/index/stamp)
+ctxmap index [path]             # AGENTS.md block + CLAUDE.md/GEMINI.md pointers + presentation.md, from real files
+ctxmap update [path]            # fix refs to renamed files; list stale docs and the commit to diff from
+ctxmap prompt update            # update prompt: the agent patches stale docs from the git diff
 ```
+
+Typical use: run `ctxmap plan`, ask your agent to follow `ctxmap prompt init`, then `ctxmap hooks install`. When `check` reports changed docs, ask the agent to follow `ctxmap prompt update` (a cheap model is enough).
 
 `candidates` finds entry points (HTTP routes, RPC/MCP tools, CLI commands, queues, cron, IPC; TS/JS, Python, Go), follows imports (relative, tsconfig `paths`, workspace packages) to see which modules each one reaches, and ranks them by modules reached × recent git churn × number of triggers. On outline (~1.9k TS files, 1k commits) it runs in ~0.3 s and ranks `server/routes/api/documents/documents.ts` first.
 

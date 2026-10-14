@@ -9,6 +9,7 @@ import { runClaudeHook } from "./hook.js";
 import { installClaudeHook, installGitHook } from "./install.js";
 import { buildPlan } from "./plan.js";
 import { renderPlan } from "./render.js";
+import { planUpdate, type UpdatePlan } from "./update.js";
 
 const HELP = `ctxmap — lean, always-current AI context for a repository
 
@@ -18,7 +19,9 @@ Usage:
   ctxmap check [path]              Validate refs in context docs and report stale ones (no LLM, no network)
   ctxmap stamp [path] [doc...]     Mark docs as verified now: record source hashes in the manifest
   ctxmap candidates [path]         Rank flow candidates and gotcha evidence from code + git history (no LLM)
+  ctxmap update [path]             Fix refs to renamed files; list stale docs and uncovered entry points (no LLM)
   ctxmap prompt init [--auto]      Print the generation prompt for your AI agent (skill mode)
+  ctxmap prompt update             Print the update prompt: the agent patches stale docs from the git diff
   ctxmap index [path]              Write the AGENTS.md block, CLAUDE.md/GEMINI.md pointers and presentation.md
   ctxmap hooks install [path]      Install the git pre-commit check and the Claude Code edit hook
   ctxmap hook claude               (internal) Claude Code PreToolUse hook; reads hook JSON on stdin
@@ -109,7 +112,17 @@ function main(argv: string[]): number {
       return 0;
     }
 
+    case "update": {
+      const plan = planUpdate(resolve(rest[0] ?? "."), { contextDir, write: !values["dry-run"] });
+      process.stdout.write(values.json ? `${JSON.stringify(plan, null, 2)}\n` : renderUpdate(plan));
+      return 0;
+    }
+
     case "prompt": {
+      if (rest[0] === "update") {
+        process.stdout.write(loadPrompt("update", {}));
+        return 0;
+      }
       if (rest[0] !== "init") break;
       const flows = values.flows ?? "5";
       const choose = values.auto
@@ -175,6 +188,23 @@ function renderCandidates(c: Candidates): string {
   return `${out.join("\n")}\n`;
 }
 
+function renderUpdate(plan: UpdatePlan): string {
+  const out: string[] = [];
+  for (const r of plan.renamed) out.push(`renamed ref  ${r.doc}: ${r.from} → ${r.to}`);
+  if (plan.stale.length === 0) out.push("All docs are fresh. Nothing to update.");
+  for (const d of plan.stale) {
+    out.push(`${d.status.padEnd(8)} ${d.doc}${d.since ? ` (verified at ${d.since})` : ""}`);
+    for (const c of d.changed) out.push(`           changed ${c.file} (+${c.added} −${c.removed})`);
+    for (const b of d.broken) out.push(`           broken  ${b.ref}: ${b.detail}`);
+  }
+  if (plan.uncovered.length > 0) {
+    out.push("", "Entry points no flow covers (consider documenting the important ones):");
+    for (const u of plan.uncovered) out.push(`  ${u.file}  ${u.triggers.join(", ")}`);
+  }
+  if (plan.stale.length > 0) out.push("", "Next: ask your AI agent to run `ctxmap prompt update` and follow it (a cheap model is enough).");
+  return `${out.join("\n")}\n`;
+}
+
 function renderCheck(report: CheckReport): string {
   const out: string[] = [];
   const counts = { fresh: 0, changed: 0, unstamped: 0, broken: 0 };
@@ -187,7 +217,7 @@ function renderCheck(report: CheckReport): string {
   }
   if (report.docs.length === 0) out.push("No ctxmap docs found.");
   else out.push(`${report.docs.length} docs: ${counts.fresh} fresh, ${counts.changed} changed, ${counts.unstamped} unstamped, ${counts.broken} broken`);
-  if (counts.changed + counts.unstamped > 0) out.push("Review changed/unstamped docs, then run `ctxmap stamp` (or `ctxmap update` once available).");
+  if (counts.changed + counts.unstamped > 0) out.push("Review changed/unstamped docs, run `ctxmap update` (an agent patches them from the git diff) or `ctxmap stamp` if they're still accurate.");
   if (report.external.length > 0) {
     out.push("", "Broken file refs in existing docs (not owned by ctxmap, informational):");
     for (const d of report.external) for (const b of d.broken) out.push(`  ${d.doc}: ${b.ref.raw}`);

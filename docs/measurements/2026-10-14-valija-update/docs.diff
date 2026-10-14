@@ -1,0 +1,81 @@
+diff -ru U-docs-before/flows/get-context.md U/.context/flows/get-context.md
+--- U-docs-before/flows/get-context.md	2026-10-14 18:45:24.743699635 +0000
++++ U/.context/flows/get-context.md	2026-10-14 18:47:12.079706016 +0000
+@@ -1,6 +1,6 @@
+ # Flow: get-context
+ Summary: MCP `get_context` → open session (idle guard) → load project items → assemble budgeted pack → render markdown; no item writes
+-Trigger: `src/delivery/mcp/server.ts:buildMcpServer()` (tool `get_context`); `valija export` reuses the same use case unbudgeted (`src/delivery/cli/content-commands.ts`)
++Trigger: `src/delivery/mcp/server.ts:buildMcpServer()` (tool `get_context`); `valija export` and the desktop pack export reuse the same use case unbudgeted (`src/delivery/context-pack-export.ts:exportProjectMarkdown()`)
+ Path:
+ 1. `src/delivery/mcp/server.ts:buildMcpServer()` — optional `budget`, default 4000 tokens.
+ 2. `src/context/application/use-cases/get-context-pack.use-case.ts:GetContextPack.execute()` — parses the project name; no write path.
+diff -ru U-docs-before/flows/import-conversations.md U/.context/flows/import-conversations.md
+--- U-docs-before/flows/import-conversations.md	2026-10-14 18:45:27.107699776 +0000
++++ U/.context/flows/import-conversations.md	2026-10-14 18:47:12.871706063 +0000
+@@ -2,7 +2,7 @@
+ Summary: `valija import <file> -p <project>` → read zip/json → pick parser → select conversations → render chunks → one batched context write with deterministic ids
+ Trigger: `src/delivery/cli/import-command.ts:importCommand()` → `ImportConversations.execute()`
+ Path:
+-1. `src/delivery/cli/import-command.ts:importCommand()` — no selection flag means list mode; `--dry-run` previews; `-p` is required only for a real import.
++1. `src/delivery/cli/import-command.ts:importCommand()` — no selection flag means list mode; `--dry-run` previews; `-p` is required only for a real import, and its name is parsed before selection.
+ 2. `src/importers/infra/file-export-reader.ts:FileExportReader.read()` — `.zip` entries inflated in memory, with size caps applied in the filter; `.json` parsed directly.
+ 3. `src/importers/application/use-cases/import-conversations.use-case.ts:ImportConversations.resolveParser()` — `--from` forces one parser; otherwise the first `detect()` match among `autodetect` wins.
+ 4. Parser `parse()` output is sorted by `createdAt` ascending; `--pick` indexes into this order.
+diff -ru U-docs-before/flows/unlock-vault.md U/.context/flows/unlock-vault.md
+--- U-docs-before/flows/unlock-vault.md	2026-10-14 18:45:29.331699908 +0000
++++ U/.context/flows/unlock-vault.md	2026-10-14 18:47:16.423706274 +0000
+@@ -2,11 +2,12 @@
+ Summary: `valija unlock` → derive key (Argon2id) or take recovery key → verify by opening db → key into OS keychain → lineage classification (fork warns, never blocks)
+ Trigger: `src/delivery/cli/vault-commands.ts:unlockCommand()` → `UnlockVault.execute()`
+ Path:
+-1. `src/delivery/cli/vault-commands.ts:unlockCommand()` — hidden passphrase prompt, or `--recovery-key`.
+-2. `src/vault/application/use-cases/unlock-vault.use-case.ts:UnlockVault.resolveKey()` — recovery key used as-is; passphrase goes through `src/vault/infra/argon2.ts:Argon2VaultCrypto.deriveKey()` with the header's salt and KDF params.
+-3. `src/vault/infra/file-vault-store.ts:FileVaultStore.readLineage()` — opens the db with the key (wrong key → `WRONG_PASSPHRASE`), runs migrations, reads lineage.
+-4. `src/vault/infra/keyring.ts:OsKeychain.setKey()` — the key is stored only after step 3 has verified it.
+-5. `src/vault/domain/services/vault-lineage.ts:classifyLineage()` — `in-sync`, `fast-forward`, or `fork`.
+-6. `UnlockVault.execute()` — fork returns ok with a `ForkNotice` (vault stays unlocked, last-seen untouched); otherwise `deviceIdentity.recordSeen()`.
++1. `src/delivery/cli/vault-commands.ts:unlockCommand()` — hidden passphrase prompt, or `--recovery-key`; always passes `upgradeConfirmed: true`.
++2. `src/vault/application/services/resolve-unlock-key.ts:resolveUnlockKey()` — recovery key used as-is; passphrase goes through `src/vault/infra/argon2.ts:Argon2VaultCrypto.deriveKey()` with the header's salt and KDF params.
++3. `src/vault/infra/file-vault-store.ts:FileVaultStore.readSchemaVersion()` — opens without migrating; schema behind `LATEST_SCHEMA_VERSION` without `upgradeConfirmed` → `VAULT_UPGRADE_REQUIRED`, nothing touched.
++4. `src/vault/infra/file-vault-store.ts:FileVaultStore.readLineage()` — opens the db with the key (wrong key → `WRONG_PASSPHRASE`), runs migrations, reads lineage.
++5. `src/vault/infra/keyring.ts:OsKeychain.setKey()` — the key is stored only after step 4 has verified it.
++6. `src/vault/domain/services/vault-lineage.ts:classifyLineage()` — `in-sync`, `fast-forward`, or `fork`.
++7. `UnlockVault.execute()` — fork returns ok with a `ForkNotice` (vault stays unlocked, last-seen untouched); otherwise `deviceIdentity.recordSeen()`.
+ Side effects: OS keychain entry; `state.json` activity and last-seen; a `vault.db.pre-NNN.bak` may be written during a migration and removed on success.
+ Related: `docs/sync.md` "If you skip the ritual: fork detection", `docs/vault-format.md`.
+--- U-docs-before/gotchas.md	2026-10-14 18:45:39.567700516 +0000
++++ U/.context/gotchas.md	2026-10-14 18:47:18.719706410 +0000
+@@ -1,6 +1,6 @@
+ # Gotchas
+ ## Repo-wide
+-- No edits to `src/**`, `package.json`, `tsup.config.ts`, or `tsconfig*.json` until the advance's `plan.md` has an `Approved:` line; agents never write that line. Enforced by `.claude/hooks/guard-implementation.sh`; process in `CLAUDE.md`.
++- No edits to `src/**`, `desktop/**`, `package.json`, `tsup.config.ts`, or `tsconfig*.json` until the advance's `plan.md` has an `Approved:` line; agents never write that line. Enforced by `.claude/hooks/guard-implementation.sh`; process in `CLAUDE.md`.
+ - Push and merge are blocked unless `advances/<ADV>/review.md` starts with `Verdict: PASS`, and the reviewer may write only `review.md`. Enforced by `.claude/hooks/guard-git-ops.sh` and `.claude/hooks/guard-review-writes.sh`.
+ - At rest the vault is one encrypted `vault.db` in a rollback-journal mode. Never enable WAL: a synced folder would upload `-wal`/`-shm` out of step with the db. See `src/shared/infra/sqlite.ts:openVaultDb()`; the lock warning came from `2fcf51f`.
+ - Every mutation goes through `VaultSession.write()`: it is the only path that bumps lineage (generation and write stamp), atomically with the change. A direct `items.save()` leaves other devices blind to the change; a read that calls `write()` makes every reader look like a writer. See `src/context/infra/vault-sessions.ts:SqliteVaultSessions.commitWrite()`.
+@@ -9,6 +9,7 @@
+ - Schema changes are append-only entries in `src/shared/infra/migrations.ts:MIGRATIONS`, applied on every session open. Table rebuilds must set `backup: true`, which keeps a ciphertext copy `vault.db.pre-NNN.bak` until success. Doctor flags leftovers (`src/vault/infra/file-vault-folder.ts`).
+ ## By area
+ ### vault
++- `UnlockVault.execute()` must not migrate a behind-schema vault unless `upgradeConfirmed` is true: `readSchemaVersion()` checks first, without migrating, and returns `VAULT_UPGRADE_REQUIRED`. The CLI always passes true; the desktop app waits for its confirmation screen. See `src/vault/application/use-cases/unlock-vault.use-case.ts:UnlockVault.execute()`.
+ - `UnlockVault.execute()` must not advance last-seen on a fork: the warning would vanish without any resolution. Fork still returns ok, so the vault stays unlocked for inspection. See `src/vault/application/use-cases/unlock-vault.use-case.ts:UnlockVault.execute()`.
+ - Fork detection is generation-based. `classifyLineage()` calls a copy a fork only when its generation is not ahead of this device's last-seen; a divergent copy that has written past it is classified as fast-forward and adopted silently. Read from code and the test names in `src/vault/domain/services/vault-lineage.test.ts`; not reproduced.
+ - A `SQLITE_NOTADB` on open is a stale key, not a storage error: it is mapped to `VAULT_LOCKED` and the keychain entry is deleted (`src/context/infra/vault-sessions.ts:SqliteVaultSessions.openRepositories()`). Keep that mapping, or the stale key stays and every call fails.
+--- U-docs-before/overview.md	2026-10-14 18:45:44.587700815 +0000
++++ U/.context/overview.md	2026-10-14 18:47:20.787706533 +0000
+@@ -7,6 +7,7 @@
+ - `src/importers/` — ChatGPT/Claude/generic exports → conversations → chunks handed to context. Entry: `application/use-cases/import-conversations.use-case.ts`.
+ - `src/shared/` — SQLCipher open, migrations, vault and state paths, `Result`, `UseCase` base.
+ - `src/testing/` — test-vault helpers and the golden fixture (`__fixtures__/golden-vault/`).
++- `desktop/` — Electron companion window; builds the same container via `src/delivery/container.ts:buildContainer()`. See `docs/gui.md`.
+ ## Data stores
+ | Store | Where | Holds |
+ |---|---|---|
+@@ -18,6 +19,6 @@
+ ## Boundaries
+ - Dependency direction: delivery → context, importers, vault. Context depends on vault only through the `VaultSessions` port (`src/context/application/ports/vault-session.ts`), implemented in `src/context/infra/vault-sessions.ts`.
+ - Importers never touch repositories or SQL. They hand drafts to `ImportItems`, a context use case, through an injected `UseCase`.
+-- Plaintext leaves the vault only as CLI/MCP output. `src/` has no network code.
++- Plaintext leaves the vault only as CLI/MCP output or desktop-window output. `src/` has no network code.
+ - Devices share only the vault folder. Coordination is a lineage stamp inside the encrypted db, plus device-local `state.json`; there is no merge (`docs/sync.md`).
+ - Decisions: `docs/SPEC.md`. On-disk contract: `docs/vault-format.md`. User-facing sync ritual: `docs/sync.md`.

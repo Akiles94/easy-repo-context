@@ -26,7 +26,7 @@ describe("check and stamp", () => {
       [".context/flows/other.md", "unstamped"],
       [".context/flows/save.md", "unstamped"],
       [".context/gotchas.md", "unstamped"],
-      ["AGENTS.md", "unstamped"],
+      ["AGENTS.md", "fresh"],
     ]);
   });
 
