@@ -5,6 +5,8 @@ A-q2-r1      6    154099    2383  0.196    23  claude-haiku-5-5,claude-sonnet-5-
 A-q2-r2     10    201323    2831  0.103    25  claude-haiku-5-5,claude-sonnet-5-5
 A-q3-r1      5    189683    3058  0.106    29  claude-haiku-5-5,claude-sonnet-5-5
 A-q3-r2      5    191663    3363  0.102    32  claude-haiku-5-5,claude-sonnet-5-5
+A-q3-r3      6    212442    3869  0.146    40  claude-haiku-5-5,claude-sonnet-5-5
+A-q3-r4      4    155845    2816  0.095    24  claude-haiku-5-5,claude-sonnet-5-5
 A-q4-r1      7    190182    1864  0.094    19  claude-haiku-5-5,claude-sonnet-5-5
 A-q4-r2      6    189380    1789  0.081    17  claude-haiku-5-5,claude-sonnet-5-5
 B-q1-r1      4    110655    2096  0.176    19  claude-haiku-5-5,claude-sonnet-5-5
@@ -29,13 +31,25 @@ S-q2-r1      5    116948    1904  0.186    17  claude-haiku-5-5,claude-sonnet-5-
 S-q2-r2      5    119853    2015  0.073    21  claude-haiku-5-5,claude-sonnet-5-5
 S-q3-r1     15    326451    5541  0.186    41  claude-haiku-5-5,claude-sonnet-5-5
 S-q3-r2     12    232043    4611  0.162    37  claude-haiku-5-5,claude-sonnet-5-5
+S-q3-r3     13    231729    4687  0.165    43  claude-haiku-5-5,claude-sonnet-5-5
+S-q3-r4     10    226447    4024  0.151    31  claude-haiku-5-5,claude-sonnet-5-5
 S-q4-r1      8    195640    1965  0.100    22  claude-haiku-5-5,claude-sonnet-5-5
 S-q4-r2     10    200202    2298  0.095    23  claude-haiku-5-5,claude-sonnet-5-5
+T-q1-r1      8    164732    2631  0.122    29  claude-haiku-5-5,claude-sonnet-5-5
+T-q1-r2      9    168785    2630  0.112    25  claude-haiku-5-5,claude-sonnet-5-5
+T-q2-r1      4    116117    1816  0.078    21  claude-haiku-5-5,claude-sonnet-5-5
+T-q2-r2      5    117009    2247  0.070    22  claude-haiku-5-5,claude-sonnet-5-5
+T-q3-r1     11    233079    4559  0.176    44  claude-haiku-5-5,claude-sonnet-5-5
+T-q3-r2     14    224546    4374  0.152    38  claude-haiku-5-5,claude-sonnet-5-5
+T-q3-r3      5    218437    3509  0.133    40  claude-haiku-5-5,claude-sonnet-5-5
+T-q3-r4      8    171574    3815  0.126    39  claude-haiku-5-5,claude-sonnet-5-5
+T-q4-r1      6    205330    1792  0.117    32  claude-haiku-5-5,claude-sonnet-5-5
+T-q4-r2      7    194783    1911  0.084    25  claude-haiku-5-5,claude-sonnet-5-5
 
 mean input tokens (k) / turns, and delta vs A
-q                       A                   B                   H                   S
-q1         236k/12.5            130k/4.5   -45%      161k/7.5   -32%      120k/6.5   -49%
-q2         178k/8.0             131k/4.5   -26%      118k/5.0   -34%      118k/5.0   -33%
-q3         191k/5.0             165k/5.0   -14%      225k/12.5  +18%      279k/13.5  +46%
-q4         190k/6.5             199k/8.0    +5%      197k/8.5    +4%      198k/9.0    +4%
-total           795k   +0%          625k  -21%          699k  -12%          716k  -10%
+q                       A                   B                   H                   S                   T
+q1         236k/12.5            130k/4.5   -45%      161k/7.5   -32%      120k/6.5   -49%      167k/8.5   -29%
+q2         178k/8.0             131k/4.5   -26%      118k/5.0   -34%      118k/5.0   -33%      117k/4.5   -34%
+q3         187k/5.0             165k/5.0   -12%      225k/12.5  +20%      254k/12.5  +36%      212k/9.5   +13%
+q4         190k/6.5             199k/8.0    +5%      197k/8.5    +4%      198k/9.0    +4%      200k/6.5    +5%
+total           791k   +0%          625k  -21%          699k  -12%          691k  -13%          695k  -12%

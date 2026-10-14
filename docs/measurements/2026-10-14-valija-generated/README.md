@@ -39,3 +39,18 @@ Cost of this round: $0.91 generation + $2.18 answering.
 
 ## Caveats
 n=2 per cell, one repo, one answering model; q3's extra tokens come with a qualitatively more thorough plan, which this setup doesn't score. Directional, not a benchmark.
+
+## Round 2: two-level gotchas (2026-10-14)
+Change: `gotchas.md` split into "Repo-wide" (≤ 8) and "By area"; the AGENTS.md index line and `presentation.md` tell agents to read Repo-wide + only the areas they touch, and to keep plans tight. Regenerated with Haiku ($0.12, 0 broken refs) → [`generated-haiku-tuned/`](generated-haiku-tuned/). q3 re-run to n=4 for A, S and T to reduce noise.
+
+| Q | A | S (Sonnet, flat gotchas) | **T (Haiku, two-level)** |
+|---|---|---|---|
+| q1 | 236k / 12.5 | 120k / 6.5 (−49%) | 167k / 8.5 (−29%) |
+| q2 | 178k / 8.0 | 118k / 5.0 (−33%) | 117k / 4.5 (−34%) |
+| q3 (n=4) | 187k / 5.0 | 254k / 12.5 (+36%) | **212k / 9.5 (+13%)** |
+| q4 | 190k / 6.5 | 198k / 9.0 (+4%) | 200k / 6.5 (+5%) |
+| Total | 791k | 691k (−13%) | 695k (−12%) |
+
+q3 plans using `session.write()` across both rounds: **no docs 1/4**, hand-written 2/2, Sonnet 4/4, Haiku 2/2, Haiku two-level 4/4 → **12/12 with docs**.
+
+Findings: the two-level structure cut the feature-planning overhead from +36% to +13% (turns 12.5 → 9.5) without losing the invariant; q1 varies a lot between runs and doc sets (−29% to −49%). Remaining overhead on q3 is extra exploration that produces longer, more complete plans. Cost of this round: $0.12 generation + ~$1.95 answering.
