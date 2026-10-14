@@ -1,23 +1,25 @@
-# ctxmap init — write lean context docs for AI agents
+# easy-repo-context init — write lean context docs for AI agents
+
+Run the tool as `easy-repo-context <command>`. If that command is not found, use `npx easy-repo-context <command>` instead (same tool, fetched from npm).
 
 You are generating context docs under `.context/` for this repository. Future AI agents will read them before answering questions or changing code. Your job is to write down what an agent **cannot cheaply learn by reading the code**: how behavior flows across modules, the invariants that silently break when violated, and where things live.
 
 Measured on a real repo: docs like these cut tokens 20–45% on "how does X work" questions, and the gotchas file prevented a real bug that agents introduced 2 out of 2 times without it. Generic or duplicated content does the opposite: it costs tokens on every task and helps nothing. Be selective.
 
 ## Hard rules
-- Write only under `.context/` (`overview.md`, `gotchas.md`, `flows/<name>.md`). Never edit code, never edit files outside `.context/`. `ctxmap index` writes `AGENTS.md` and pointers for you.
+- Write only under `.context/` (`overview.md`, `gotchas.md`, `flows/<name>.md`). Never edit code, never edit files outside `.context/`. `easy-repo-context index` writes `AGENTS.md` and pointers for you.
 - Never document what reading one file reveals: directory listings, file-by-file summaries, code style, lint rules, type definitions, copied code.
 - Don't duplicate existing docs (README, docs/, CLAUDE.md, AGENTS.md, ADRs). Link them by path instead.
 - English, telegraphic Markdown, even if the repo or the user uses another language.
-- Every code reference is a code span: `path/to/file.ts`, `path/to/file.ts:Class.method()`, `path/to/file.ts:functionName()`, `package.json#scripts.test`. Use paths from the repo root. Every ref must exist: `ctxmap check` validates them and you must fix every broken one.
+- Every code reference is a code span: `path/to/file.ts`, `path/to/file.ts:Class.method()`, `path/to/file.ts:functionName()`, `package.json#scripts.test`. Use paths from the repo root. Every ref must exist: `easy-repo-context check` validates them and you must fix every broken one.
 - Don't invent. If you didn't read it, don't claim it. Uncertain → leave it out.
 - Size limits: each flow ≤ ~25 lines; `overview.md` ≤ ~40 lines; `gotchas.md` 6–20 bullets (≤ 8 repo-wide).
 
 ## Steps
 
-1. **Orient (cheap).** Run `ctxmap plan --json` for existing docs and real commands, and skim the root agent instructions and any architecture doc it lists. Note what they already cover.
+1. **Orient (cheap).** Run `easy-repo-context plan --json` for existing docs and real commands, and skim the root agent instructions and any architecture doc it lists. Note what they already cover.
 
-2. **Get candidates.** Run `ctxmap candidates --json --limit 12`. It ranks entry points (routes, RPC/MCP tools, CLI commands, queues, cron, IPC) by modules reached × recent churn, and lists gotcha evidence: files with repeated fix commits, warning comments in hot code, decision records.
+2. **Get candidates.** Run `easy-repo-context candidates --json --limit 12`. It ranks entry points (routes, RPC/MCP tools, CLI commands, queues, cron, IPC) by modules reached × recent churn, and lists gotcha evidence: files with repeated fix commits, warning comments in hot code, decision records.
 
 3. **Choose flows** ({{FLOW_COUNT}} by default). A flow is a *behavior* that crosses modules (e.g. "create document", "user signs in", "nightly export"), not a whole router file. Prefer: high-ranked candidates, distinct mechanisms (skip a second CRUD route that works exactly like the first), and behaviors with side effects (writes, queues, external calls, crypto, sync).
    {{CHOOSE_MODE}}
@@ -67,7 +69,7 @@ Measured on a real repo: docs like these cut tokens 20–45% on "how does X work
    - <how components talk; what is shared; what never crosses>
    ```
 
-7. **Validate and finish.** Run `ctxmap check`, fix every broken ref by correcting the doc (never by editing code), and repeat until it passes. Then run `ctxmap index` (writes the `AGENTS.md` block, tool pointers and `presentation.md`) and `ctxmap stamp`.
+7. **Validate and finish.** Run `easy-repo-context check`, fix every broken ref by correcting the doc (never by editing code), and repeat until it passes. Then run `easy-repo-context index` (writes the `AGENTS.md` block, tool pointers and `presentation.md`) and `easy-repo-context stamp`.
 
 8. **Report** in a few lines: files written, flows chosen and why, gotchas you were unsure about and left out.
 

@@ -3,28 +3,31 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { type CheckReport, runCheck, stampDocs } from "./check.js";
-import { loadPrompt, writeIndex } from "./agents-index.js";
+import { loadPrompt, packageRoot, writeIndex } from "./agents-index.js";
 import { type Candidates, findCandidates } from "./candidates.js";
 import { runClaudeHook } from "./hook.js";
-import { installClaudeHook, installGitHook } from "./install.js";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { installClaudeHook, installGitHook, installSkill, isOnPath, toolCommand } from "./install.js";
 import { buildPlan } from "./plan.js";
 import { renderPlan } from "./render.js";
 import { planUpdate, type UpdatePlan } from "./update.js";
 
-const HELP = `ctxmap — lean, always-current AI context for a repository
+const HELP = `easy-repo-context — lean, always-current AI context for a repository
 
 Usage:
-  ctxmap plan [path]               Inventory the repo and show what init would write (no LLM, no writes)
-  ctxmap init [path] --dry-run     Same as plan
-  ctxmap check [path]              Validate refs in context docs and report stale ones (no LLM, no network)
-  ctxmap stamp [path] [doc...]     Mark docs as verified now: record source hashes in the manifest
-  ctxmap candidates [path]         Rank flow candidates and gotcha evidence from code + git history (no LLM)
-  ctxmap update [path]             Fix refs to renamed files; list stale docs and uncovered entry points (no LLM)
-  ctxmap prompt init [--auto]      Print the generation prompt for your AI agent (skill mode)
-  ctxmap prompt update             Print the update prompt: the agent patches stale docs from the git diff
-  ctxmap index [path]              Write the AGENTS.md block, CLAUDE.md/GEMINI.md pointers and presentation.md
-  ctxmap hooks install [path]      Install the git pre-commit check and the Claude Code edit hook
-  ctxmap hook claude               (internal) Claude Code PreToolUse hook; reads hook JSON on stdin
+  easy-repo-context plan [path]               Inventory the repo and show what init would write (no LLM, no writes)
+  easy-repo-context init [path] --dry-run     Same as plan
+  easy-repo-context check [path]              Validate refs in context docs and report stale ones (no LLM, no network)
+  easy-repo-context stamp [path] [doc...]     Mark docs as verified now: record source hashes in the manifest
+  easy-repo-context candidates [path]         Rank flow candidates and gotcha evidence from code + git history (no LLM)
+  easy-repo-context update [path]             Fix refs to renamed files; list stale docs and uncovered entry points (no LLM)
+  easy-repo-context prompt init [--auto]      Print the generation prompt for your AI agent (skill mode)
+  easy-repo-context prompt update             Print the update prompt: the agent patches stale docs from the git diff
+  easy-repo-context index [path]              Write the AGENTS.md block, CLAUDE.md/GEMINI.md pointers and presentation.md
+  easy-repo-context hooks install [path]      Install the git pre-commit check and the Claude Code edit hook
+  easy-repo-context skill install [path]      Install the agent skill into <path>/.claude/skills (--global: ~/.claude/skills)
+  easy-repo-context hook claude               (internal) Claude Code PreToolUse hook; reads hook JSON on stdin
 
 Options:
   --json             Machine-readable output
@@ -34,6 +37,8 @@ Options:
   --limit <n>        candidates: how many flows to list (default 10)
   --auto             prompt: the agent picks flows itself instead of asking you first
   --git / --claude   hooks install: only that hook (default: both)
+  --global           skill install: install for your user instead of this project
+  -v, --version      Print the version
   --pointers         plan: also create CLAUDE.md / GEMINI.md pointers when they don't exist
   --flows <n>        plan: number of flows to propose (default 6)
   --context-dir <d>  Output folder (default .context)
@@ -58,10 +63,16 @@ function main(argv: string[]): number {
       auto: { type: "boolean" },
       "context-dir": { type: "string" },
       help: { type: "boolean", short: "h" },
+      version: { type: "boolean", short: "v" },
+      global: { type: "boolean" },
     },
   });
 
   const [command, ...rest] = positionals;
+  if (values.version) {
+    process.stdout.write(`${(JSON.parse(readFileSync(join(packageRoot(), "package.json"), "utf8")) as { version: string }).version}\n`);
+    return 0;
+  }
   const contextDir = values["context-dir"];
   if (values.help || !command) {
     process.stdout.write(HELP);
@@ -73,7 +84,7 @@ function main(argv: string[]): number {
     case "init": {
       if (command === "init" && !values["dry-run"]) {
         process.stderr.write(
-          "ctxmap init generates docs with your AI agent (skill mode): ask it to run `ctxmap prompt init` and follow it.\n" +
+          "easy-repo-context init generates docs with your AI agent (skill mode): ask it to run `easy-repo-context prompt init` and follow it.\n" +
             "Direct API mode is not available yet. Showing the plan:\n\n",
         );
       }
@@ -145,6 +156,21 @@ function main(argv: string[]): number {
       const both = !values.git && !values.claude;
       const outcomes = [...(both || values.git ? [installGitHook(root)] : []), ...(both || values.claude ? [installClaudeHook(root)] : [])];
       for (const o of outcomes) process.stdout.write(`${o.result.padEnd(15)} ${o.path}${o.note ? ` — ${o.note}` : ""}\n`);
+      if (toolCommand(root) === "easy-repo-context" && !isOnPath("easy-repo-context")) {
+        process.stdout.write(
+          "\nThe hooks call `easy-repo-context`, which is not on your PATH yet. Install it with `npm i -g easy-repo-context`,\n" +
+            "or in a Node project add it as a dev dependency (`npm i -D easy-repo-context`) and re-run this command.\n",
+        );
+      }
+      return 0;
+    }
+
+    case "skill": {
+      if (rest[0] !== "install") break;
+      const target = values.global ? join(homedir(), ".claude", "skills") : join(resolve(rest[1] ?? "."), ".claude", "skills");
+      const o = installSkill(join(packageRoot(), "skills", "easy-repo-context", "SKILL.md"), target);
+      process.stdout.write(`${o.result.padEnd(15)} ${o.path}\n`);
+      process.stdout.write("Other agents (Codex, Cursor, Gemini CLI…): ask them to run `easy-repo-context prompt init` and follow it.\n");
       return 0;
     }
 
@@ -201,7 +227,7 @@ function renderUpdate(plan: UpdatePlan): string {
     out.push("", "Entry points no flow covers (consider documenting the important ones):");
     for (const u of plan.uncovered) out.push(`  ${u.file}  ${u.triggers.join(", ")}`);
   }
-  if (plan.stale.length > 0) out.push("", "Next: ask your AI agent to run `ctxmap prompt update` and follow it (a cheap model is enough).");
+  if (plan.stale.length > 0) out.push("", "Next: ask your AI agent to run `easy-repo-context prompt update` and follow it (a cheap model is enough).");
   return `${out.join("\n")}\n`;
 }
 
@@ -215,11 +241,11 @@ function renderCheck(report: CheckReport): string {
     for (const b of d.broken) out.push(`            ${b.ref.raw}: ${"detail" in b ? b.detail : ""}`);
     for (const c of d.changed) out.push(`            changed since stamp: ${c}`);
   }
-  if (report.docs.length === 0) out.push("No ctxmap docs found.");
+  if (report.docs.length === 0) out.push("No easy-repo-context docs found.");
   else out.push(`${report.docs.length} docs: ${counts.fresh} fresh, ${counts.changed} changed, ${counts.unstamped} unstamped, ${counts.broken} broken`);
-  if (counts.changed + counts.unstamped > 0) out.push("Review changed/unstamped docs, run `ctxmap update` (an agent patches them from the git diff) or `ctxmap stamp` if they're still accurate.");
+  if (counts.changed + counts.unstamped > 0) out.push("Review changed/unstamped docs, run `easy-repo-context update` (an agent patches them from the git diff) or `easy-repo-context stamp` if they're still accurate.");
   if (report.external.length > 0) {
-    out.push("", "Broken file refs in existing docs (not owned by ctxmap, informational):");
+    out.push("", "Broken file refs in existing docs (not owned by easy-repo-context, informational):");
     for (const d of report.external) for (const b of d.broken) out.push(`  ${d.doc}: ${b.ref.raw}`);
   }
   return `${out.join("\n")}\n`;

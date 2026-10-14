@@ -11,7 +11,7 @@ export function renderPlan(plan: Plan): string {
     .map(([l, n]) => `${l} ${n}`)
     .join(", ");
 
-  out.push(`ctxmap plan (dry run) — ${plan.root}`);
+  out.push(`easy-repo-context plan (dry run) — ${plan.root}`);
   out.push("");
   out.push(`Repo: ${plan.stats.files} files, ${plan.stats.sourceFiles} source (${langs || "none detected"}), ~${k(plan.stats.sourceTokens)} tokens of code`);
 
@@ -42,7 +42,7 @@ export function renderPlan(plan: Plan): string {
       continue;
     }
     const shown = kind === "human-docs" ? items.slice(0, 12) : items;
-    for (const d of shown) out.push(`    ${d.path}${d.tool && kind !== "human-docs" ? ` [${d.tool}]` : ""} ~${k(d.tokens)}${d.managed ? " (has ctxmap block)" : ""}`);
+    for (const d of shown) out.push(`    ${d.path}${d.tool && kind !== "human-docs" ? ` [${d.tool}]` : ""} ~${k(d.tokens)}${d.managed ? " (has easy-repo-context block)" : ""}`);
     if (shown.length < items.length) out.push(`    … ${items.length - shown.length} more`);
   }
 

@@ -7,7 +7,8 @@ import { isTestFile } from "./graph.js";
 import { inventory } from "./inventory.js";
 import { spliceManagedBlock } from "./markers.js";
 
-export const promptsDir = () => join(dirname(fileURLToPath(import.meta.url)), "..", "prompts");
+export const packageRoot = () => join(dirname(fileURLToPath(import.meta.url)), "..");
+export const promptsDir = () => join(packageRoot(), "prompts");
 
 interface FlowInfo {
   file: string;
@@ -36,7 +37,7 @@ export function renderAgentsBlock(root: string, contextDir = ".context"): string
   const overview = has(`${contextDir}/overview.md`) ? readText(root, `${contextDir}/overview.md`) : "";
   const purpose = /^Purpose:\s*(.+)$/m.exec(overview)?.[1]?.trim();
 
-  const lines = ["# Repo context (ctxmap)"];
+  const lines = ["# Repo context (easy-repo-context)"];
   if (purpose) lines.push(purpose);
 
   const commands = detectCommands(root, files).filter((c) => c.role !== "other");

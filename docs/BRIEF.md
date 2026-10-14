@@ -1,4 +1,4 @@
-# Brief: repo context tool (working name `ctxmap`)
+# Brief: repo context tool — `easy-repo-context` (working name was `ctxmap`)
 
 Handoff from a planning chat. Build a tool that prepares lean, always-current, AI-readable context for any repository, so agents answer questions and implement features without re-mapping the whole codebase.
 
@@ -166,5 +166,6 @@ Value must not depend on documenting the whole repo. Strategy:
 3. ✅ Flow candidates by churn × fan-out (static, no LLM) + gotcha evidence: repeated fix commits per file, warning comments in hot code, decision records. Tested on valija and outline/outline. Known noise: visual/CSS fix hotspots; the LLM step filters.
 4. ✅ LLM generation via `ctxmap prompt init` (skill mode) + deterministic `ctxmap index`. Measured: generated docs keep the quality win (12/12 plans with docs avoid the bug vs 1/4 without), −12% tokens overall; two-level gotchas cut feature-planning overhead from +36% to +13%. Haiku generation is enough ($0.14 vs $0.77). See `docs/measurements/2026-10-14-valija-generated/`. Pending: `add-flow`, API mode.
 5. ✅ Diff-aware `update`: deterministic triage (renames fixed, stale/broken docs with the commit to diff from, uncovered entry points) + `ctxmap prompt update`. Across 150 real valija commits: Haiku patched 5 docs correctly for $0.018. See `docs/measurements/2026-10-14-valija-update/`.
-6. `eval` (PR replay) on a large real repo.
-7. Later: suggest turning verifiable gotchas into tests/lint rules; symbol-body hashing to cut "changed" noise.
+6. ✅ Packaging: npm package `easy-repo-context` (`ctxmap` is taken on npm; no short alias because `erc` is an unrelated npm package), `SKILL.md` + `skill install`, hooks call the project dependency or the global command. End-to-end from a natural request on a clean valija copy: skill triggered, full flow completed, 0 broken refs, existing hooks kept, $0.044 with Haiku.
+7. `eval` (PR replay) on a large real repo; direct API mode; `add-flow`.
+8. Later: suggest turning verifiable gotchas into tests/lint rules; symbol-body hashing to cut "changed" noise.

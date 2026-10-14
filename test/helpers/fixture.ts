@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 export function fixture(files: Record<string, string>): string {
-  const root = mkdtempSync(join(tmpdir(), "ctxmap-"));
+  const root = mkdtempSync(join(tmpdir(), "easy-repo-context-"));
   for (const [path, content] of Object.entries(files)) write(root, path, content);
   return root;
 }

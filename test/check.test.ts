@@ -109,3 +109,27 @@ describe("hooks install", () => {
     expect(existsSync(join(fresh, ".git/hooks/pre-commit"))).toBe(true);
   });
 });
+
+describe("tool command and skill install", () => {
+  it("uses the project's install when it is a dependency, the global command otherwise", async () => {
+    const { toolCommand } = await import("../src/install.js");
+    expect(toolCommand(fixture({ "package.json": JSON.stringify({ devDependencies: { "easy-repo-context": "^0.1.0" } }) }))).toBe("npx --no-install easy-repo-context");
+    expect(toolCommand(fixture({ "package.json": JSON.stringify({ devDependencies: {} }) }))).toBe("easy-repo-context");
+    expect(toolCommand(fixture({ "pyproject.toml": "" }))).toBe("easy-repo-context");
+  });
+
+  it("writes the git hook with the detected command", () => {
+    const root = fixture({ ".git/HEAD": "x", "package.json": JSON.stringify({ devDependencies: { "easy-repo-context": "^0.1.0" } }) });
+    installGitHook(root);
+    expect(readFileSync(join(root, ".git/hooks/pre-commit"), "utf8")).toContain("npx --no-install easy-repo-context check ||");
+  });
+
+  it("installs the bundled skill idempotently", async () => {
+    const { installSkill } = await import("../src/install.js");
+    const root = fixture({});
+    const source = join(__dirname, "..", "skills", "easy-repo-context", "SKILL.md");
+    expect(installSkill(source, join(root, ".claude/skills")).result).toBe("installed");
+    expect(installSkill(source, join(root, ".claude/skills")).result).toBe("already-present");
+    expect(readFileSync(join(root, ".claude/skills/easy-repo-context/SKILL.md"), "utf8")).toMatch(/^---\nname: easy-repo-context\n/);
+  });
+});

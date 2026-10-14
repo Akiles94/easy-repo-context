@@ -1,5 +1,5 @@
-export const BEGIN = "<!-- ctxmap:begin -->";
-export const END = "<!-- ctxmap:end -->";
+export const BEGIN = "<!-- easy-repo-context:begin -->";
+export const END = "<!-- easy-repo-context:end -->";
 
 export function hasManagedBlock(text: string): boolean {
   return text.includes(BEGIN) && text.indexOf(END) > text.indexOf(BEGIN);

@@ -89,7 +89,7 @@ export function buildPlan(root: string, options: PlanOptions = {}): Plan {
     ["overview.md", "architecture in one screen: components, boundaries, data stores"],
     ["gotchas.md", "non-obvious traps, invariants, rationale"],
     ["presentation.md", "how the agent presents answers to the user"],
-    ["manifest.yaml", "doc → source hashes, used by `ctxmap check`"],
+    ["manifest.yaml", "doc → source hashes, used by `easy-repo-context check`"],
   ] as const) {
     const path = `${contextDir}/${name}`;
     actions.push({ path, kind: exists(path) ? "update-block" : "create", why });

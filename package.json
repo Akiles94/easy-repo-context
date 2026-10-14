@@ -1,33 +1,54 @@
 {
-  "name": "ctxmap",
-  "version": "0.0.1",
-  "description": "Lean, always-current, AI-readable context for any repository.",
-  "type": "module",
+  "name": "easy-repo-context",
+  "version": "0.1.0",
+  "description": "Lean, always-current context for AI coding agents: cross-module flows and invariants your agent cannot get from reading code, kept fresh from git.",
+  "keywords": [
+    "agents",
+    "agents-md",
+    "ai",
+    "context",
+    "claude-code",
+    "codex",
+    "cursor",
+    "llm",
+    "documentation",
+    "developer-tools"
+  ],
+  "homepage": "https://github.com/Akiles94/easy-repo-context#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Akiles94/easy-repo-context.git"
+  },
   "license": "MIT",
+  "author": "Oscar Vinueza",
+  "type": "module",
   "engines": {
     "node": ">=22"
   },
   "bin": {
-    "ctxmap": "dist/cli.js"
+    "easy-repo-context": "dist/cli.js"
   },
   "files": [
     "dist",
     "prompts",
-    "README.md"
+    "skills",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"
-  },
-  "dependencies": {
-    "yaml": "^2.9.1"
   }
 }
