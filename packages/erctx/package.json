@@ -31,6 +31,6 @@
     "easy-repo-context": "^0.1.0"
   },
   "scripts": {
-    "prepublishOnly": "node ../../scripts/check-lf.mjs"
+    "prepublishOnly": "node ../../scripts/ensure-lf.mjs"
   }
 }
