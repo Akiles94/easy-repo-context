@@ -24,3 +24,13 @@ describe("spliceManagedBlock", () => {
     expect(spliceManagedBlock("user\n", "ptr", "top")).toBe(`${BEGIN}\nptr\n${END}\n\nuser\n`);
   });
 });
+
+describe("Windows line endings", () => {
+  it("keeps CRLF files in CRLF and reads blocks without stray \\r", () => {
+    const user = "# Rules\r\nkeep\r\n";
+    const out = spliceManagedBlock(user, "line one\nline two");
+    expect(out).toBe(`# Rules\r\nkeep\r\n\r\n${BEGIN}\r\nline one\r\nline two\r\n${END}\r\n`);
+    expect(readManagedBlock(out)).toBe("line one\nline two");
+    expect(spliceManagedBlock(out, "line one\nline two")).toBe(out);
+  });
+});

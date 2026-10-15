@@ -31,8 +31,11 @@ function walk(root: string, dir: string): string[] {
   return files;
 }
 
+/** Normalize Windows line endings so parsing and hashing behave the same on every OS. */
+export const toLf = (text: string): string => text.replace(/\r\n?/g, "\n");
+
 export function readText(root: string, path: string): string {
-  return readFileSync(join(root, path), "utf8");
+  return toLf(readFileSync(join(root, path), "utf8"));
 }
 
 export function fileSize(root: string, path: string): number {

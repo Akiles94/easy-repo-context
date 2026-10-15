@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { detectCommands } from "./commands.js";
-import { listFiles, readText } from "./files.js";
+import { listFiles, readText, toLf } from "./files.js";
 import { isTestFile } from "./graph.js";
 import { inventory } from "./inventory.js";
 import { spliceManagedBlock } from "./markers.js";
@@ -23,7 +23,7 @@ function readFlows(root: string, contextDir: string): FlowInfo[] {
     .filter((f) => f.endsWith(".md"))
     .sort()
     .map((f) => {
-      const text = readFileSync(join(dir, f), "utf8");
+      const text = toLf(readFileSync(join(dir, f), "utf8"));
       const name = /^#\s*Flow:\s*(.+)$/m.exec(text)?.[1]?.trim() ?? f.replace(/\.md$/, "");
       const summary = /^Summary:\s*(.+)$/m.exec(text)?.[1]?.trim();
       return { file: `${contextDir}/flows/${f}`, name, ...(summary ? { summary } : {}) };
@@ -103,6 +103,6 @@ export function writeIndex(root: string, options: { contextDir?: string; pointer
 }
 
 export function loadPrompt(name: string, vars: Record<string, string>): string {
-  const text = readFileSync(join(promptsDir(), `${name}.md`), "utf8");
+  const text = toLf(readFileSync(join(promptsDir(), `${name}.md`), "utf8"));
   return text.replace(/\{\{(\w+)\}\}/g, (_, key: string) => vars[key] ?? "");
 }

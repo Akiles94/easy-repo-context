@@ -41,7 +41,7 @@
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+    "prepublishOnly": "npm run typecheck && npm test && npm run build && node scripts/check-lf.mjs"
   },
   "dependencies": {
     "yaml": "^2.9.1"

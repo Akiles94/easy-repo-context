@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { parse, stringify } from "yaml";
+import { toLf } from "./files.js";
 
 export interface DocEntryManifest {
   /** Git commit the doc was last verified against; `update` diffs from here. */
@@ -38,7 +39,10 @@ export function saveManifest(root: string, contextDir: string, manifest: Manifes
 
 export function hashFile(root: string, path: string): string | undefined {
   try {
-    return createHash("sha256").update(readFileSync(join(root, path))).digest("hex").slice(0, 16);
+    // Hash text with LF endings: a CRLF checkout on Windows must not look "changed" to a Linux teammate.
+    const bytes = readFileSync(join(root, path));
+    const content = bytes.includes(0) ? bytes : toLf(bytes.toString("utf8"));
+    return createHash("sha256").update(content).digest("hex").slice(0, 16);
   } catch {
     return undefined;
   }

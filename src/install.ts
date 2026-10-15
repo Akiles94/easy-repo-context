@@ -18,7 +18,9 @@ export function toolCommand(root: string, env: NodeJS.ProcessEnv = process.env):
 }
 
 export function isOnPath(command: string, env: NodeJS.ProcessEnv = process.env): boolean {
-  return (env.PATH ?? "").split(delimiter).some((dir) => dir && existsSync(join(dir, command)));
+  // On Windows, npm installs `<name>.cmd` / `.ps1` shims; PATHEXT lists the extensions to try.
+  const exts = process.platform === "win32" ? ["", ...(env.PATHEXT ?? ".EXE;.CMD;.BAT").split(";"), ".ps1"] : [""];
+  return (env.PATH ?? env.Path ?? "").split(delimiter).some((dir) => dir && exts.some((ext) => existsSync(join(dir, command + ext.toLowerCase())) || existsSync(join(dir, command + ext))));
 }
 
 const gitHook = (cmd: string) => `#!/bin/sh

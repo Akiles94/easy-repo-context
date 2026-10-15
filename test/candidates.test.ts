@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { findCandidates } from "../src/candidates.js";
 import { findEntryPoints } from "../src/entries.js";
+import { listFiles } from "../src/files.js";
 import { buildImportGraph, closure, detectAliases, moduleMap, sourceFiles } from "../src/graph.js";
 import { isFixCommit } from "../src/history.js";
 import { fixture, write } from "./helpers/fixture.js";
@@ -19,7 +20,7 @@ describe("import graph", () => {
     "py/app/models.py": "",
     "py/app/util.py": "",
   });
-  const files = execFileSync("find", [".", "-type", "f"], { cwd: root, encoding: "utf8" }).split("\n").filter(Boolean).map((f) => f.slice(2));
+  const files = listFiles(root);
   const graph = buildImportGraph(root, sourceFiles(files), { aliases: detectAliases(root, files) });
 
   it("resolves relative, NodeNext .js, require and tsconfig path imports", () => {

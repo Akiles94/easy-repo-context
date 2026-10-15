@@ -130,6 +130,29 @@ describe("tool command and skill install", () => {
     const source = join(__dirname, "..", "skills", "easy-repo-context", "SKILL.md");
     expect(installSkill(source, join(root, ".claude/skills")).result).toBe("installed");
     expect(installSkill(source, join(root, ".claude/skills")).result).toBe("already-present");
-    expect(readFileSync(join(root, ".claude/skills/easy-repo-context/SKILL.md"), "utf8")).toMatch(/^---\nname: easy-repo-context\n/);
+    expect(readFileSync(join(root, ".claude/skills/easy-repo-context/SKILL.md"), "utf8")).toMatch(/^---\r?\nname: easy-repo-context\r?\n/);
+  });
+});
+
+describe("cross-platform", () => {
+  it("hashes LF and CRLF checkouts of the same file identically", async () => {
+    const { hashFile } = await import("../src/manifest.js");
+    const root = fixture({ "lf.ts": "a\nb\n", "crlf.ts": "a\r\nb\r\n" });
+    expect(hashFile(root, "crlf.ts")).toBe(hashFile(root, "lf.ts"));
+  });
+
+  it("parses CRLF docs without stray carriage returns", async () => {
+    const { renderAgentsBlock } = await import("../src/agents-index.js");
+    const root = fixture({ ".context/overview.md": "# Overview\r\nPurpose: billing.\r\n", ".context/flows/a.md": "# Flow: charge\r\nSummary: pay → ledger\r\n" });
+    const block = renderAgentsBlock(root);
+    expect(block).not.toContain("\r");
+    expect(block).toContain("charge: pay → ledger → `.context/flows/a.md`");
+  });
+
+  it("finds gotchas in a CRLF gotchas.md", () => {
+    const root = repo();
+    write(root, ".context/gotchas.md", "- Every mutation goes through `src/session.ts:Sessions.write()`.\r\n- other\r\n");
+    stampDocs(root);
+    expect(contextForFile(root, "src/session.ts").gotchas).toEqual(["Every mutation goes through `src/session.ts:Sessions.write()`."]);
   });
 });
